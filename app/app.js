@@ -2,10 +2,11 @@ const express = require('express');
 const router = express.Router()
 const Router = require('./router')
 router.use('/', Router)
+const bot = require('./telegramBot/index')
 
 
 const mongoose = require('mongoose');
-mongoose.connect('mongodb://localhost/telegramBot', { useNewUrlParser: true, useUnifiedTopology: true  })
+mongoose.connect(process.env.mongodb, { useNewUrlParser: true, useUnifiedTopology: true  })
 const db = mongoose.connection;
 
 db.once('open', () => {
@@ -14,5 +15,11 @@ db.once('open', () => {
 db.on('error', (err) => {
   console.log(err);
 });
+
+bot.launch().then(() => {
+  console.log("Connected to Telegram successfully!");
+}).catch(r => {
+  console.log('telegramError', r);
+})
 
 module.exports = router;
