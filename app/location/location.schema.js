@@ -5,9 +5,10 @@ const locationSchema = mongoose.Schema({
     type: String,
     required: true
   },
-  games: {
-    type: [mongoose.Schema.Types.ObjectId]
-  }
+  location: {
+    type: String,
+    required: true
+  },
 }, {
   versionKey: false,
   timestamps: true,

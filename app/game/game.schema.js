@@ -17,6 +17,9 @@ const gameSchema = mongoose.Schema({
     type: Number,
     required: true
   },
+  location: {
+    type: String,
+  }
 }, {
   versionKey: false,
   timestamps: true,

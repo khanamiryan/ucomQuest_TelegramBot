@@ -76,11 +76,11 @@ bot.command('admin', async ctx => adminPage(ctx))
 bot.on('text', async (ctx) => {
   const [code, text] = ctx.message?.text.split(':')
   const user = code ? await getUserByCode(code) : null;
-  if (user) {
+  if (user && text) {
     await bot.telegram.sendMessage(user.id, `<b><i>${text}</i></b>`, {
       parse_mode: 'html'
     })
-  } else if (ctx.state?.chatTo) {
+  } else if (ctx.state?.chatTo && ctx.message.text) {
     await bot.telegram.sendMessage(ctx.state.chatTo, `<b><i>${ctx.message.text}</i></b>`, {
       parse_mode: 'html'
     })
@@ -92,9 +92,9 @@ bot.on('photo', async (ctx) => {
     await bot.telegram.sendPhoto(ctx.state.chatTo, ctx.message.photo.pop().file_id)
   }
 })
-bot.action(/^textTo/, (ctx) => {
+bot.action(/^textTo/, async (ctx) => {
   const [,userId, userName] = ctx.update.callback_query.data.split(':')
-  updateUser({
+  await updateUser({
     id: ctx.from.id,
     data: {
       chatTo: userId
