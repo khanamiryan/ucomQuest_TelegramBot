@@ -3,7 +3,6 @@ const mongoose = require('mongoose');
 const userSchema = mongoose.Schema({
   first_name: {
     type: String,
-    required: true
   },
   last_name: {
     type: String,
@@ -13,7 +12,6 @@ const userSchema = mongoose.Schema({
   },
   id: {
     type: String,
-    required: true,
     ensureIndex: true,
   },
   role: {
@@ -25,6 +23,9 @@ const userSchema = mongoose.Schema({
     type: Number,
   },
   chatTo: {
+    type: String,
+  },
+  code: {
     type: String,
   }
 }, {

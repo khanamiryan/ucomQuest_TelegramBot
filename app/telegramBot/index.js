@@ -11,12 +11,26 @@ const getUserById = async (id) => {
 const updateUser = async ({id, data}) => {
   return Users.updateOne({id}, data)
 }
+const getUserByCode = async (code) => {
+  return Users.findOne({code});
+}
 
 bot.use(async (ctx, next) => {
   let user = await getUserById(ctx.from.id)
+
   if(!user) {
-    user = new Users(ctx.from)
-    await user.save()
+    const code = await getUserByCode(ctx.message.text)
+    if (code) {
+      if (code.id) {
+        return false
+      }
+      await Users.updateOne({code: ctx.message.text}, ctx.from)
+      await ctx.reply('you are connected')
+      user = await getUserById(ctx.from.id)
+    } else {
+      await ctx.reply('please insert CODE')
+      return false
+    }
   }
   ctx.state.role = user.role;
   ctx.state.chatTo = user.chatTo || '';
@@ -59,19 +73,24 @@ bot.command('templates', async ctx => buttonsTemplate.replyToContext(ctx))
 bot.command('game', async ctx => GameMenu.replyToContext(ctx))
 bot.command('admin', async ctx => adminPage(ctx))
 
-bot.on('text', ctx => {
-  if (ctx.state.chatTo) {
-    bot.telegram.sendMessage(ctx.state.chatTo, `<b><i>${ctx.message.text}</i></b>`, {
+bot.on('text', async (ctx) => {
+  const [code, text] = ctx.message?.text.split(':')
+  const user = code ? await getUserByCode(code) : null;
+  if (user) {
+    await bot.telegram.sendMessage(user.id, `<b><i>${text}</i></b>`, {
+      parse_mode: 'html'
+    })
+  } else if (ctx.state?.chatTo) {
+    await bot.telegram.sendMessage(ctx.state.chatTo, `<b><i>${ctx.message.text}</i></b>`, {
       parse_mode: 'html'
     })
   }
 })
 
-bot.on('photo', ctx => {
-  console.log(ctx.message);
-  bot.telegram.sendPhoto(850214269, ctx.message.photo.pop().file_id).then(e => {
-    console.log('e', e);
-  })
+bot.on('photo', async (ctx) => {
+  if (ctx.state?.chatTo) {
+    await bot.telegram.sendPhoto(ctx.state.chatTo, ctx.message.photo.pop().file_id)
+  }
 })
 bot.action(/^textTo/, (ctx) => {
   const [,userId, userName] = ctx.update.callback_query.data.split(':')
