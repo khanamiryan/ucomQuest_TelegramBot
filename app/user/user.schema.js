@@ -7,7 +7,9 @@ const userSchema = mongoose.Schema({
   },
   last_name: {
     type: String,
-    required: true
+  },
+  username: {
+    type: String,
   },
   id: {
     type: String,
@@ -18,6 +20,12 @@ const userSchema = mongoose.Schema({
     type: String,
     required: true,
     default: 'player'
+  },
+  phone_number: {
+    type: Number,
+  },
+  chatTo: {
+    type: String,
   }
 }, {
   versionKey: false,

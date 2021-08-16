@@ -1,45 +1,155 @@
-const {Telegraf, Markup } = require('telegraf');
+const {Telegraf } = require('telegraf');
 const Users = require('../user/user.schema')
 const bot = new Telegraf(process.env.botToken);
+const GameMenu = require('./menu')
+const buttonsTemplate = require('./buttonsTemplate')
+const admin = require('./admin')
 
-bot.on('sticker', (ctx) => ctx.reply('👍'))
-const inlineMessageRatingKeyboard = [[
-  { text: '👍', callback_data: 'like' },
-  { text: '👎', callback_data: 'dislike' }
-]];
-bot.command('start', async (ctx) => {
-  ctx.reply('buttons', { reply_markup: JSON.stringify({ inline_keyboard: inlineMessageRatingKeyboard }) })
-})
-
-bot.action('like', (ctx) => ctx.editMessageText('🎉 Awesome! 🎉'))
-bot.action('dislike', (ctx) => ctx.editMessageText('okey'))
-
-
-const getUser = async (id) => {
+const getUserById = async (id) => {
   return Users.findOne({id});
+}
+const updateUser = async ({id, data}) => {
+  return Users.updateOne({id}, data)
 }
 
 bot.use(async (ctx, next) => {
-  let user = await getUser(ctx.from.id)
+  let user = await getUserById(ctx.from.id)
   if(!user) {
     user = new Users(ctx.from)
     await user.save()
   }
   ctx.state.role = user.role;
+  ctx.state.chatTo = user.chatTo || '';
   return next()
 })
 
-// bot.on('text', (ctx) => {
-//   return ctx.reply(`Hello ${ctx.state.role}`)
-// })
-// bot.telegram.sendMessage(ctx.chat.id, 'hello there! Welcome to my new telegram bot.', {
-// })
+bot.command('phone', (ctx) => {
+  ctx.reply('Send me your number please', { reply_markup: { keyboard: [[{text: '📲 Send phone number', request_contact: true}]], resize_keyboard: true, one_time_keyboard: true  } })
+})
+bot.command('location', (ctx) => {
+  ctx.reply('Send me your location please', { reply_markup: { keyboard: [[{text: 'send location', request_location: true}]], resize_keyboard: true, one_time_keyboard: true  } })
+})
+bot.on('contact', async (ctx) => {
+  await updateUser({
+    id: ctx.update.message.contact.user_id,
+    data: {
+      phone_number: +ctx.update.message.contact.phone_number,
+    }
+  })
+  ctx.reply(`thank you our admins will contact you, by that number\n${ctx.update.message.contact.phone_number}`)
+})
 
-bot.on('photo', (ctx) => {
-  // bot.telegram.sendPhoto(ctx.chat.id, 'https://www.kindpng.com/picc/m/12-122875_transparent-younglife-logo-png-young-life-logo-yl.png')
-  ctx.replyWithPhoto('https://www.kindpng.com/picc/m/12-122875_transparent-younglife-logo-png-young-life-logo-yl.png')
+bot.on('location', async (ctx) => {
+  console.log(123, ctx);
+  // await updateUser({
+  //   id: ctx.update.message.contact.user_id,
+  //   data: {
+  //     phone_number: +ctx.update.message.contact.phone_number,
+  //   }
+  // })
+  ctx.reply(`thank you`)
 })
 
 
+bot.use(GameMenu.middleware())
+bot.use(buttonsTemplate.middleware())
+bot.use(admin.middleware())
 
+bot.command('templates', async ctx => buttonsTemplate.replyToContext(ctx))
+bot.command('game', async ctx => GameMenu.replyToContext(ctx))
+bot.command('admin', async ctx => adminPage(ctx))
+
+bot.on('text', ctx => {
+  if (ctx.state.chatTo) {
+    bot.telegram.sendMessage(ctx.state.chatTo, `<b><i>${ctx.message.text}</i></b>`, {
+      parse_mode: 'html'
+    })
+  }
+})
+
+bot.on('photo', ctx => {
+  console.log(ctx.message);
+  bot.telegram.sendPhoto(850214269, ctx.message.photo.pop().file_id).then(e => {
+    console.log('e', e);
+  })
+})
+bot.action(/^textTo/, (ctx) => {
+  const [,userId, userName] = ctx.update.callback_query.data.split(':')
+  updateUser({
+    id: ctx.from.id,
+    data: {
+      chatTo: userId
+    }
+  })
+  ctx.editMessageText(`now we chatting with ${userName}`)
+})
+bot.action('back', async (ctx) => {
+  // await bot.telegram.deleteMessage(ctx.update.callback_query.message.chat.id, ctx.update.callback_query.message.message_id)
+  await adminPage(ctx)
+})
+const adminPage = async (ctx) => {
+  if (ctx.state.role === 'admin') {
+    await admin.replyToContext(ctx)
+  }
+}
+
+//
+// const menuTemplate = new MenuTemplate<MyContext>(ctx => `Hey ${ctx.from.first_name}!`)
+//
+// menuTemplate.interact('I am excited!', 'a', {
+//   do: async ctx => {
+//     await ctx.reply('As am I!')
+//     return false
+//   }
+// })
+//
+// bot.on('sticker', (ctx) => ctx.reply('👍'))
+// const inlineMessageRatingKeyboard = JSON.stringify({ inline_keyboard: [
+//     [
+//       { text: 'button 1', callback_data: 'like' },
+//     ],
+//     [
+//       { text: 'button 2', callback_data: 'like' },
+//       { text: 'button 2', callback_data: 'like' },
+//       { text: 'button 2', callback_data: 'like' },
+//     ],
+//     [
+//       { text: 'button 3', callback_data: 'like' },
+//       { text: 'button 3', callback_data: 'like' },
+//       { text: 'button 3', callback_data: 'like' },
+//       { text: 'button 3', callback_data: 'aaa' },
+//     ],
+//   ],
+//   resize_keyboard: true,
+//   one_time_keyboard: true,
+//   force_reply: true,
+// });
+// bot.command('start', async (ctx) => {
+//   ctx.reply('buttons', { reply_markup: inlineMessageRatingKeyboard })
+// })
+//
+// bot.action('like', (ctx) => ctx.editMessageReplyMarkup(inlineMessageRatingKeyboard))
+// bot.action('aaa', (ctx) => ctx.reply('buttons', { reply_markup: inlineMessageRatingKeyboard }))
+//
+//
+//
+// // bot.on('text', (ctx) => {
+// //   return ctx.reply(`Hello ${ctx.state.role}`)
+// // })
+// // bot.telegram.sendMessage(ctx.chat.id, 'hello there! Welcome to my new telegram bot.', {
+// // })
+//
+// bot.on('photo', (ctx) => {
+//   // bot.telegram.sendPhoto(ctx.chat.id, 'https://www.kindpng.com/picc/m/12-122875_transparent-younglife-logo-png-young-life-logo-yl.png')
+//   ctx.replyWithPhoto('https://www.kindpng.com/picc/m/12-122875_transparent-younglife-logo-png-young-life-logo-yl.png')
+// })
+//
+//
+
+bot.use(async (ctx, next) => {
+  if (ctx.callbackQuery && 'data' in ctx.callbackQuery) {
+    console.log('another callbackQuery happened', ctx.callbackQuery.data.length, ctx.callbackQuery.data)
+  }
+  return next()
+})
 module.exports = bot

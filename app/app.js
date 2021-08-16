@@ -16,10 +16,11 @@ db.on('error', (err) => {
   console.log(err);
 });
 
+bot.catch(error => {
+  console.log('bot error', error)
+})
 bot.launch().then(() => {
   console.log("Connected to Telegram successfully!");
-}).catch(r => {
-  console.log('telegramError', r);
 })
 
 module.exports = router;
