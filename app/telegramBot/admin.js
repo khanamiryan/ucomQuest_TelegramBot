@@ -2,29 +2,23 @@ const {MenuTemplate, MenuMiddleware, createBackMainMenuButtons} = require('teleg
 const Users = require('../user/user.schema')
 
 const findUsers = async () => {
-  return Users.find({role: 'player'})
+  return Users.find({role: 'player', first_name: { $exists: true }})
 }
-let userButtons = [
-  [{ text: '<< back', callback_data: 'back' }]
-];
-(async () => {
-  const users = await findUsers()
-  for(const user of users){
-    userButtons.unshift([
-      { text: user.first_name, callback_data: `textTo:${user.id}:${user.first_name}` },
-    ])
-  };
-})()
 
 const menu = new MenuTemplate(() => 'Admin page')
 menu.interact(`User List`, 'userList', {
   do: async (ctx) => {
     ctx.deleteMessage()
-    ctx.reply(`Users: ${userButtons.length - 1}`, { reply_markup: JSON.stringify({ inline_keyboard: userButtons,
-        resize_keyboard: true,
-        one_time_keyboard: true,
-        force_reply: true,
-      })})
+    const users = await findUsers()
+    let userButtons = [
+      [{ text: '<< back', callback_data: 'back' }]
+    ];
+    for(const user of users){
+      userButtons.unshift([
+        { text: `code: ${user.code}`, callback_data: `textTo:${user.id}:${user.code}` },
+      ])
+    };
+    ctx.reply(`Users: ${userButtons.length - 1}`, { reply_markup: JSON.stringify({ inline_keyboard: userButtons})})
     return false
   }
 });

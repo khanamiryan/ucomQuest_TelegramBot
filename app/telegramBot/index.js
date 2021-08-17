@@ -1,23 +1,16 @@
+const myCommands = {
+  clear: 'clear chatting User'
+}
+
 const {Telegraf } = require('telegraf');
 const Users = require('../user/user.schema')
 const bot = new Telegraf(process.env.botToken);
-const GameMenu = require('./menu')
+const GameMenu = require('./game')
 const buttonsTemplate = require('./buttonsTemplate')
 const admin = require('./admin')
 
-const getUserById = async (id) => {
-  return Users.findOne({id});
-}
-const updateUser = async ({id, data}) => {
-  return Users.updateOne({id}, data)
-}
-const getUserByCode = async (code) => {
-  return Users.findOne({code});
-}
-
 bot.use(async (ctx, next) => {
   let user = await getUserById(ctx.from.id)
-
   if(!user) {
     const code = await getUserByCode(ctx.message.text)
     if (code) {
@@ -34,6 +27,18 @@ bot.use(async (ctx, next) => {
   }
   ctx.state.role = user.role;
   ctx.state.chatTo = user.chatTo || '';
+  const [code] = ctx?.message?.text.split(':') || []
+  if (myCommands[code]) {
+    switch (code) {
+      case 'clear':
+        await updateUser({id: user.id, data: {
+            chatTo: null
+          }})
+        await ctx.reply('Chatting is clear')
+        break
+    }
+    return false
+  }
   return next()
 })
 
@@ -93,22 +98,22 @@ bot.on('photo', async (ctx) => {
   }
 })
 bot.action(/^textTo/, async (ctx) => {
-  const [,userId, userName] = ctx.update.callback_query.data.split(':')
+  const [,userId, userCode] = ctx.update.callback_query.data.split(':')
   await updateUser({
     id: ctx.from.id,
     data: {
       chatTo: userId
     }
   })
-  ctx.editMessageText(`now we chatting with ${userName}`)
+  ctx.editMessageText(`now we chatting with ${userCode}`)
 })
 bot.action('back', async (ctx) => {
-  // await bot.telegram.deleteMessage(ctx.update.callback_query.message.chat.id, ctx.update.callback_query.message.message_id)
   await adminPage(ctx)
 })
 const adminPage = async (ctx) => {
   if (ctx.state.role === 'admin') {
     await admin.replyToContext(ctx)
+    return false
   }
 }
 
@@ -172,3 +177,13 @@ bot.use(async (ctx, next) => {
   return next()
 })
 module.exports = bot
+
+const getUserById = async (id) => {
+  return Users.findOne({id});
+}
+const updateUser = async ({id, data}) => {
+  return Users.updateOne({id}, data)
+}
+const getUserByCode = async (code) => {
+  return Users.findOne({code});
+}

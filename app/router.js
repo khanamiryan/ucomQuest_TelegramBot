@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router()
 const userRouter = require('./user/user')
 const gameRouter = require('./game/game')
-const locationRouter = require('./location/location')
+const {router: locationRouter} = require('./location/location')
 
 router.get('/', (req, res) => {
   res.send('app works')

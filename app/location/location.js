@@ -1,14 +1,8 @@
 const express = require('express');
-const Location = require('./location.schema')
 const LocationGames = require('./locationGame.schema')
 const router = express.Router()
 
-router.post('/', async (req, res) => {
-  const newLocation = new Location(req.body);
-  const location = await newLocation.save()
-  res.json(location)
-})
-router.get('/', async (req, res) => {
+getLocation = async () => {
   let locations = await Location.aggregate([
     {
       $lookup:
@@ -44,6 +38,16 @@ router.get('/', async (req, res) => {
     })
     return location
   })
+  return locations
+}
+
+router.post('/', async (req, res) => {
+  const newLocation = new Location(req.body);
+  const location = await newLocation.save()
+  res.json(location)
+})
+router.get('/', async (req, res) => {
+  const locations = await getLocation()
   res.json(locations)
 })
 router.delete('/:id', async (req, res) => {
@@ -67,4 +71,4 @@ router.post('/addGameToLocation', async (req, res) => {
   res.json(true)
 })
 
-module.exports = router;
+module.exports = {router, getLocation};

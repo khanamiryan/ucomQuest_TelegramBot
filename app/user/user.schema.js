@@ -27,6 +27,12 @@ const userSchema = mongoose.Schema({
   },
   code: {
     type: String,
+  },
+  playingLocationId: {
+    type: mongoose.Schema.Types.ObjectId,
+  },
+  playingGameId: {
+    type: mongoose.Schema.Types.ObjectId,
   }
 }, {
   versionKey: false,
