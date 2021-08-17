@@ -9,26 +9,41 @@ router.post('/', async (req, res) => {
   res.json(location)
 })
 router.get('/', async (req, res) => {
-  const locations = await Location.aggregate([
+  let locations = await Location.aggregate([
     {
       $lookup:
         {
           from: "locationgames",
           localField: "_id",
           foreignField: "locationId",
-          as: "locationGames"
+          as: "games"
         }
     },
     {
       $lookup:
         {
           from: "games",
-          localField: "locationGames.gameId",
+          localField: "games.gameId",
           foreignField: "_id",
           as: "locationGames"
         }
     },
   ])
+  locations = locations.map(location => {
+    location.locationGames = location.locationGames.map(( locGames) => {
+      let gameLocations = '';
+      location.games.map((game) => {
+        if (game.gameId.toString() === locGames._id.toString()) {
+          gameLocations = game.location
+        }
+      })
+      return {
+        ...locGames,
+        location: gameLocations
+      }
+    })
+    return location
+  })
   res.json(locations)
 })
 router.delete('/:id', async (req, res) => {
@@ -40,10 +55,11 @@ router.post('/addGameToLocation', async (req, res) => {
   await LocationGames.remove({
     locationId: req.body._id
   })
-  for(const gameId of  req.body.games) {
+  for(const game of  req.body.games) {
     const locationGame = new LocationGames({
       locationId: req.body._id,
-      gameId
+      gameId: game.gameId,
+      location: game.location,
     })
     await locationGame.save()
   }
