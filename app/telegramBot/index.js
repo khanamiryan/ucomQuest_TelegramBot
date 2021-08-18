@@ -50,8 +50,8 @@ bot.command('admin', async ctx => adminPage(ctx))
 bot.command('game', async ctx => game({ctx})) // open Games Menu
 bot.action(/^gTo/, async (ctx) => gameTo(ctx)) // gameTo
 
-bot.on('text', async (ctx) => onText(ctx, bot))
-bot.on('photo', async (ctx) => onPhoto(ctx, bot))
+bot.on('text', async (ctx) => onText(ctx))
+bot.on('photo', async (ctx) => onPhoto(ctx))
 
 bot.action(/^textTo/, async (ctx) => {
   const [,userId, userCode] = ctx.update.callback_query.data.split(':')

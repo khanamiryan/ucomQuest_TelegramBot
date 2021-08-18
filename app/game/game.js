@@ -16,4 +16,11 @@ router.delete('/:id', async (req, res) => {
   res.json(true)
 })
 
-module.exports = router;
+const getGameById = (id) => {
+  return Games.findById(id)
+}
+
+module.exports = {
+  getGameById,
+  router
+};

@@ -72,4 +72,30 @@ router.post('/addGameToLocation', async (req, res) => {
   res.json(true)
 })
 
-module.exports = {router, getLocation};
+const getLocationGameData = (_id) => {
+  return LocationGames.aggregate([
+    {
+      $match: {_id}
+    },
+    {
+      $lookup:
+        {
+          from: "games",
+          localField: "gameId",
+          foreignField: "_id",
+          as: "game"
+        }
+    },
+    {
+      $addFields: {gameData: { $arrayElemAt: [ "$game", 0 ] }}
+    },
+    {$project: {game: 0}},
+  ])
+}
+
+
+module.exports = {
+  router,
+  getLocation,
+  getLocationGameData
+};
