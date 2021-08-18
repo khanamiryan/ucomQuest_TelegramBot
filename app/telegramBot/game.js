@@ -5,7 +5,9 @@ const Messages = require('../messages/messages.schema')
 
 // Game Menu
 const game = async ({ctx, text = ''}) => {
-  ctx.deleteMessage()
+  ctx.deleteMessage().catch(err => {
+    console.log(err)
+  })
   if (ctx.state.playingGameId) {
     ctx.reply('Now you playing a game')
   } else {
@@ -16,9 +18,7 @@ const game = async ({ctx, text = ''}) => {
     })
     if (deleteMessages.length) {
       for (const deleteMessage of deleteMessages) {
-        ctx.deleteMessage(deleteMessage.messageId).then((e) => {
-          console.log(111, e);
-        }).catch((err) => {
+        ctx.deleteMessage(deleteMessage.messageId).then().catch((err) => {
           console.log(2222, err);
         })
       }
@@ -52,18 +52,20 @@ const game = async ({ctx, text = ''}) => {
       ])
     }
     ctx.reply(`Games`, {reply_markup: JSON.stringify({inline_keyboard: gameButtons})}).then(async (e) => {
-      const newMessage = new Messages({
-        messageId: e.message_id,
-        userId: ctx.state.userId,
-        messagesType: 'delete'
-      })
-      await newMessage.save()
+      // const newMessage = new Messages({
+      //   messageId: e.message_id,
+      //   userId: ctx.state.userId,
+      //   messagesType: 'delete'
+      // })
+      // await newMessage.save()
     })
   }
   return false
 }
 const showGame = async ({ctx, text}) => {
-  ctx.deleteMessage()
+  ctx.deleteMessage().catch(err => {
+    console.log(err)
+  })
   const [, locationGameText] = text.split('/')
   const [, locationGameId] = locationGameText.split('=')
   const locationGameData = await LocationGame.findById(locationGameId)
@@ -81,17 +83,23 @@ const showGame = async ({ctx, text}) => {
     [{ text: `play Game`, callback_data: `gTo:pG/lGId=${locationGameId}`}, // pG = playGame, gTo = gameTo, lGId = locationGameId,
       { text: `🔙 back ↩`, callback_data: `gTo:gM/lGId=${locationGameId}`}] // gM = gameMenu, gTo = gameTo
   ];
-  ctx.reply(gameData.fullDescription, { reply_markup: JSON.stringify({ inline_keyboard: gameButtons})})
+  ctx.reply(gameData.description, { reply_markup: JSON.stringify({ inline_keyboard: gameButtons})})
 }
 const playGame = async ({ctx, text}) => {
-  ctx.deleteMessage()
+  ctx.deleteMessage().catch(err => {
+    console.log(err)
+  })
   const [,locationGame] = text.split('/')
   const [,locationGameId] = locationGame.split('=')
   // TODO delete messages
   const locationGameData = await LocationGame.findById(locationGameId)
   const gameData = await Game.findById(locationGameData.gameId)
   await Users.updateOne({id: ctx.state.userId}, {playingGameId: locationGameData._id})
-  ctx.reply(`Now you are playing ${gameData.name}`)
+  ctx.reply(
+    `<b>Now you are playing <i>${gameData.name}</i></b>
+${gameData.fullDescription}`, {
+    parse_mode: 'html'
+  })
 }
 const gameTo = async (ctx) => {
   const [, text] = ctx.update.callback_query.data.split(':')

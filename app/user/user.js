@@ -54,4 +54,68 @@ router.delete('/:id', async (req, res) => {
   res.json(true)
 })
 
-module.exports = router;
+const getUserInfo = async (code) => {
+  return Users.aggregate([
+    {
+      $match: {code}
+    },
+    {
+      $lookup:
+        {
+          from: "locations",
+          localField: "playingLocationId",
+          foreignField: "_id",
+          as: "location"
+        }
+    },
+    {
+      $addFields: {locationData: { $arrayElemAt: [ "$location", 0 ] }}
+    },
+    {$project: {location: 0}},
+    {
+      $lookup:
+        {
+          from: "locationgames",
+          localField: "playingGameId",
+          foreignField: "_id",
+          as: "playingGame"
+        }
+    },
+    {
+      $addFields: {playingGameData: { $arrayElemAt: [ "$playingGame", 0 ] }}
+    },
+    {$project: {playingGame: 0}},
+    {
+      $lookup:
+        {
+          from: "games",
+          localField: "playingGameData.gameId",
+          foreignField: "_id",
+          as: "game"
+        }
+    },
+    {
+      $addFields: {gameData: { $arrayElemAt: [ "$game", 0 ] }}
+    },
+    {$project: {game: 0}},
+  ])
+}
+
+const getUserById = async (id) => {
+  return Users.findOne({id});
+}
+const updateUser = async ({id, data}) => {
+  return Users.updateOne({id}, data)
+}
+const getUserByCode = async (code) => {
+  return Users.findOne({code});
+}
+
+
+module.exports = {
+  router,
+  getUserInfo,
+  getUserById,
+  updateUser,
+  getUserByCode
+};
