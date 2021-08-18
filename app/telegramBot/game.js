@@ -89,9 +89,8 @@ const playGame = async ({ctx, text}) => {
   const [,locationGameId] = locationGame.split('=')
   // TODO delete messages
   const locationGameData = await LocationGame.findById(locationGameId)
-  console.log('locationGameData', locationGameData);
   const gameData = await Game.findById(locationGameData.gameId)
-  await Users.updateOne({id: ctx.state.userId}, {playingGameId: locationGameData.gameId})
+  await Users.updateOne({id: ctx.state.userId}, {playingGameId: locationGameData._id})
   ctx.reply(`Now you are playing ${gameData.name}`)
 }
 const gameTo = async (ctx) => {

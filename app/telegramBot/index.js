@@ -1,5 +1,6 @@
 const myCommands = {
-  clear: 'clear chatting User'
+  stop: 'chatting is stop',
+  player: 'playerInfo'
 }
 
 const {Telegraf } = require('telegraf');
@@ -32,14 +33,35 @@ bot.use(async (ctx, next) => {
   ctx.state.playingLocationId = user.playingLocationId || '';
   ctx.state.playingGameId = user.playingGameId || '';
   ctx.state.userId = user.id || '';
-  const [code] = ctx?.message?.text ? ctx?.message?.text.split(':') : []
+  ctx.state.userData_Id = user._id || '';
+  ctx.state.user = user || {};
+  const [code, text] = ctx?.message?.text ? ctx?.message?.text.split(':') : []
   if (ctx.state.role === 'admin' && myCommands[code]) {
     switch (code) {
-      case 'clear':
+      case 'stop':
         await updateUser({id: user.id, data: {
             chatTo: null
           }})
-        await ctx.reply('Chatting is clear')
+        await ctx.reply('Chatting is stop')
+        break
+      case 'player':
+        const player = await getUserInfo(text.trim())
+        if (player.length) {
+          await ctx.reply(`
+<b>code</b>: <i>${player[0].code}</i>
+<b>first_name</b>: <i>${player[0].first_name}</i>
+<b>location</b>: <i>${player[0].locationData?.name}</i>
+<b>game</b>: <i>${player[0].gameData?.name}</i>
+<b>gameLocation</b>: <i>${player[0].playingGameData?.location}</i>
+          `, {
+            parse_mode: 'html'
+          })
+          if(player[0].playingGameData?.location) {
+            await ctx.replyWithLocation(...player[0].playingGameData?.location.split(', '))
+          }
+        } else {
+          await ctx.reply(`this "${text}" player not found`)
+        }
         break
     }
     return false
@@ -92,9 +114,15 @@ bot.on('text', async (ctx) => {
       parse_mode: 'html'
     })
   } else if (ctx.state?.chatTo && ctx.message.text) {
-    await bot.telegram.sendMessage(ctx.state.chatTo, `<b><i>${ctx.message.text}</i></b>`, {
-      parse_mode: 'html'
-    })
+    if (ctx.state.role === 'player') {
+      await bot.telegram.sendMessage(ctx.state.chatTo, `<b>${ctx.state.user.code}</b>:  <i>${ctx.message.text}</i>`, {
+        parse_mode: 'html'
+      })
+    } else {
+      await bot.telegram.sendMessage(ctx.state.chatTo, `<b>${ctx.message.text}</b>`, {
+        parse_mode: 'html'
+      })
+    }
   }
 })
 bot.action(/^gTo/, async (ctx) => gameTo(ctx)) // gameTo
@@ -111,7 +139,6 @@ bot.action(/^textTo/, async (ctx) => {
       chatTo: userId
     }
   })
-
   ctx.editMessageText(`now we chatting with ${userCode}`)
 })
 bot.action('back', async (ctx) => {
@@ -119,6 +146,7 @@ bot.action('back', async (ctx) => {
 })
 const adminPage = async (ctx) => {
   if (ctx.state.role === 'admin') {
+    ctx.deleteMessage()
     await admin.replyToContext(ctx)
     return false
   }
@@ -193,4 +221,50 @@ const updateUser = async ({id, data}) => {
 }
 const getUserByCode = async (code) => {
   return Users.findOne({code});
+}
+const getUserInfo = async (code) => {
+  return Users.aggregate([
+    {
+      $match: {code}
+    },
+    {
+      $lookup:
+        {
+          from: "locations",
+          localField: "playingLocationId",
+          foreignField: "_id",
+          as: "location"
+        }
+    },
+    {
+      $addFields: {locationData: { $arrayElemAt: [ "$location", 0 ] }}
+    },
+    {$project: {location: 0}},
+    {
+      $lookup:
+        {
+          from: "locationgames",
+          localField: "playingGameId",
+          foreignField: "_id",
+          as: "playingGame"
+        }
+    },
+    {
+      $addFields: {playingGameData: { $arrayElemAt: [ "$playingGame", 0 ] }}
+    },
+    {$project: {playingGame: 0}},
+    {
+      $lookup:
+        {
+          from: "games",
+          localField: "playingGameData.gameId",
+          foreignField: "_id",
+          as: "game"
+        }
+    },
+    {
+      $addFields: {gameData: { $arrayElemAt: [ "$game", 0 ] }}
+    },
+    {$project: {game: 0}},
+  ])
 }

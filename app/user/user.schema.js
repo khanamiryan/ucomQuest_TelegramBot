@@ -22,6 +22,9 @@ const userSchema = mongoose.Schema({
   phone_number: {
     type: Number,
   },
+  adminId: {
+    type: mongoose.Schema.Types.ObjectId,
+  },
   chatTo: {
     type: String,
   },
