@@ -33,6 +33,9 @@ const userSchema = mongoose.Schema({
   },
   playingGameId: {
     type: mongoose.Schema.Types.ObjectId,
+  },
+  playedGames: {
+    type: [mongoose.Schema.Types.ObjectId],
   }
 }, {
   versionKey: false,

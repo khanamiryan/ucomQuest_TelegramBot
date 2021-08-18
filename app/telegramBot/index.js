@@ -4,8 +4,10 @@ const myCommands = {
 
 const {Telegraf } = require('telegraf');
 const Users = require('../user/user.schema')
-const bot = new Telegraf(process.env.botToken);
-const GameMenu = require('./game')
+const bot = new Telegraf(process.env.botToken, {
+  polling: true,
+});
+const {game, gameTo} = require('./game')
 const buttonsTemplate = require('./buttonsTemplate')
 const admin = require('./admin')
 
@@ -27,8 +29,11 @@ bot.use(async (ctx, next) => {
   }
   ctx.state.role = user.role;
   ctx.state.chatTo = user.chatTo || '';
-  const [code] = ctx?.message?.text.split(':') || []
-  if (myCommands[code]) {
+  ctx.state.playingLocationId = user.playingLocationId || '';
+  ctx.state.playingGameId = user.playingGameId || '';
+  ctx.state.userId = user.id || '';
+  const [code] = ctx?.message?.text ? ctx?.message?.text.split(':') : []
+  if (ctx.state.role === 'admin' && myCommands[code]) {
     switch (code) {
       case 'clear':
         await updateUser({id: user.id, data: {
@@ -70,12 +75,13 @@ bot.on('location', async (ctx) => {
 })
 
 
-bot.use(GameMenu.middleware())
+// bot.use(GameMenu.middleware())
 bot.use(buttonsTemplate.middleware())
 bot.use(admin.middleware())
 
 bot.command('templates', async ctx => buttonsTemplate.replyToContext(ctx))
-bot.command('game', async ctx => GameMenu.replyToContext(ctx))
+// bot.command('game', async ctx => GameMenu.replyToContext(ctx))
+bot.command('game', async ctx => game({ctx}))
 bot.command('admin', async ctx => adminPage(ctx))
 
 bot.on('text', async (ctx) => {
@@ -91,7 +97,7 @@ bot.on('text', async (ctx) => {
     })
   }
 })
-
+bot.action(/^gTo/, async (ctx) => gameTo(ctx)) // gameTo
 bot.on('photo', async (ctx) => {
   if (ctx.state?.chatTo) {
     await bot.telegram.sendPhoto(ctx.state.chatTo, ctx.message.photo.pop().file_id)
@@ -105,6 +111,7 @@ bot.action(/^textTo/, async (ctx) => {
       chatTo: userId
     }
   })
+
   ctx.editMessageText(`now we chatting with ${userCode}`)
 })
 bot.action('back', async (ctx) => {

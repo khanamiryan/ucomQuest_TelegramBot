@@ -1,5 +1,6 @@
 const express = require('express');
 const LocationGames = require('./locationGame.schema')
+const Location = require('./location.schema')
 const router = express.Router()
 
 getLocation = async () => {
