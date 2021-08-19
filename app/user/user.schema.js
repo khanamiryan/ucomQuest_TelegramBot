@@ -42,6 +42,9 @@ const userSchema = mongoose.Schema({
   },
   playedGames: {
     type: [String],
+  },
+  playStatus: {
+    type: String,
   }
 }, {
   versionKey: false,

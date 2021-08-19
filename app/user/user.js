@@ -45,7 +45,10 @@ router.post('/', async (req, res) => {
     res.json({error: 'use other code'})
   } else {
     const newUser = new Users({...req.body, ...req.body.admin});
-    const user = await newUser.save()
+    if (newUser.role === 'player') {
+      newUser.playStatus = 'goingLocation'
+    }
+      const user = await newUser.save()
     res.json(user)
   }
 })

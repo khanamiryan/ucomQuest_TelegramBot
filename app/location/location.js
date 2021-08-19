@@ -92,10 +92,13 @@ const getLocationGameData = (_id) => {
     {$project: {game: 0}},
   ])
 }
-
+const getLocationDataById = (id) => {
+  return Location.findById(id)
+}
 
 module.exports = {
   router,
+  getLocationDataById,
   getLocation,
   getLocationGameData
 };

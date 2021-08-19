@@ -4,6 +4,7 @@ const Users = require('../user/user.schema')
 const Messages = require('../messages/messages.schema')
 const {updateUser, getUserById} = require("../user/user");
 const {Telegraf} = require('telegraf');
+const {getLocationGameData, getLocationDataById} = require("../location/location");
 const bot = new Telegraf(process.env.botToken, {
   polling: true,
 });
@@ -88,8 +89,12 @@ const approveGame = async ({ctx, text}) => {
 const showGameMenu = async (userId) => {
   const user = await getUserById(userId)
   await deleteMessagesFunction(userId)
-  if (user.playingGameId) {
-    bot.telegram.sendMessage(userId, 'Now you playing a game')
+  if(user.playStatus === 'goingLocation') {
+    const location = await getLocationDataById(user.playingLocationId)
+    // TODO: location start description
+    await bot.telegram.sendMessage(userId, location.startDescription)
+  } else if (user.playingGameId) {
+    await bot.telegram.sendMessage(userId, 'Now you playing a game')
   } else {
     const userGames = await Users.aggregate([
       {$match: {id: userId}},
@@ -130,7 +135,7 @@ const showGameMenu = async (userId) => {
         {text: `${game.name}`, callback_data: `gTo:gId/lG=${game._id}`}, // gId = gameId
       ])
     }
-    bot.telegram.sendMessage(userId, `Games`, {reply_markup: JSON.stringify({inline_keyboard: gameButtons})}).then(async (e) => {
+    await bot.telegram.sendMessage(userId, `Games`, {reply_markup: JSON.stringify({inline_keyboard: gameButtons})}).then(async (e) => {
       const newMessage = new Messages({
         messageId: e.message_id,
         userId,
