@@ -31,6 +31,12 @@ const userSchema = mongoose.Schema({
   playingLocationId: {
     type: mongoose.Schema.Types.ObjectId,
   },
+  playingLocationSteps: {
+    type: [mongoose.Schema.Types.ObjectId],
+  },
+  playingLocationStepsNames: {
+    type: [String]
+  },
   playingGameId: {
     type: mongoose.Schema.Types.ObjectId,
   },
