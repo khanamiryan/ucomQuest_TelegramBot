@@ -7,7 +7,7 @@ router.post('/', async (req, res) => {
   res.json(file)
 })
 router.get('/', async (req, res) => {
-  const files = File.find();
+  const files = await File.find();
   res.json(files)
 })
 

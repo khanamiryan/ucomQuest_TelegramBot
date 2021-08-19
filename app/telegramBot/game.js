@@ -2,22 +2,25 @@ const LocationGame = require('../location/locationGame.schema')
 const Game = require('../game/game.schema')
 const Users = require('../user/user.schema')
 const Messages = require('../messages/messages.schema')
-const {updateUser} = require("../user/user");
-
-const deleteMessagesFunction = async (ctx) => {
+const {updateUser, getUserById} = require("../user/user");
+const {Telegraf} = require('telegraf');
+const bot = new Telegraf(process.env.botToken, {
+  polling: true,
+});
+const deleteMessagesFunction = async (userId) => {
   const deleteMessages = await Messages.find({
-    userId: ctx.state.userId,
+    userId,
     messagesType: 'delete',
     status: 'active',
   })
   if (deleteMessages.length) {
     for (const deleteMessage of deleteMessages) {
-      ctx.deleteMessage(deleteMessage.messageId).then().catch((err) => {
+      bot.telegram.deleteMessage(userId, deleteMessage.messageId).then().catch((err) => {
         console.log(2222, err);
       })
     }
     await Messages.updateMany({
-      userId: ctx.state.userId,
+      userId,
       messagesType: 'delete'
     }, {
       status: 'deleted'
@@ -25,20 +28,74 @@ const deleteMessagesFunction = async (ctx) => {
   }
 }
 
-// Game Menu
-const game = async ({ctx, text = ''}) => {
+const showGame = async ({ctx, text}) => {
+  const [, locationGameText] = text.split('/')
+  const [, locationGameId] = locationGameText.split('=')
+  const locationGameData = await LocationGame.findById(locationGameId)
+  await deleteMessagesFunction(ctx.state.userId)
+  if (locationGameData.location) {
+    const deleteMessage = await ctx.replyWithLocation(...locationGameData.location.split(', '))
+    const newMessage = new Messages({
+      messageId: deleteMessage.message_id,
+      userId: ctx.state.userId,
+      messagesType: 'delete'
+    })
+    await newMessage.save()
+  }
+  const gameData = await Game.findById(locationGameData.gameId)
+  const gameButtons = [
+    [{ text: `play Game`, callback_data: `gTo:pG/lGId=${locationGameId}`}, // pG = playGame, gTo = gameTo, lGId = locationGameId,
+      { text: `🔙 back ↩`, callback_data: `gTo:gM/lGId=${locationGameId}`}] // gM = gameMenu, gTo = gameTo
+  ];
+  ctx.reply(gameData.description, { reply_markup: JSON.stringify({ inline_keyboard: gameButtons})}).then(async (e) => {
+    const newMessage = new Messages({
+      messageId: e.message_id,
+      userId: ctx.state.userId,
+      messagesType: 'delete'
+    })
+    await newMessage.save()
+  })
+}
+const playGame = async ({ctx, text}) => {
   ctx.deleteMessage().catch(err => {
     console.log(err)
   })
-  if (ctx.state.playingGameId) {
-    ctx.reply('Now you playing a game')
+  const [,locationGame] = text.split('/')
+  const [,locationGameId] = locationGame.split('=')
+  const locationGameData = await LocationGame.findById(locationGameId)
+  const gameData = await Game.findById(locationGameData.gameId)
+  await Users.updateOne({id: ctx.state.userId}, {playingGameId: locationGameData._id, $push: { "playedGames" : gameData.gameCode } })
+  ctx.reply(
+    `<b>Now you are playing <i>${gameData.name}</i></b>
+${gameData.fullDescription}`, {
+      parse_mode: 'html'
+    })
+}
+const approveGame = async ({ctx, text}) => {
+  ctx.deleteMessage().catch(err => {
+    console.log(err)
+  })
+  const [,user] = text.split('/')
+  const [,userId] = user.split('=')
+  await updateUser({id: userId, data: {
+      playingGameId: undefined
+    }})
+  await ctx.telegram.sendMessage(userId, 'շնորհավորում եմ դուք հաղթահարել եք խաղը')
+  await showGameMenu(userId)
+}
+
+// Game Menu
+const showGameMenu = async (userId) => {
+  const user = await getUserById(userId)
+  await deleteMessagesFunction(userId)
+  if (user.playingGameId) {
+    bot.telegram.sendMessage(userId, 'Now you playing a game')
   } else {
-    await deleteMessagesFunction(ctx)
     const userGames = await Users.aggregate([
-      {$match: {id: ctx.state.userId}},
+      {$match: {id: userId}},
     ])
     const locationGames = await LocationGame.aggregate([
-      {$match: {locationId: ctx.state.playingLocationId}},
+      {$match: {locationId: user.playingLocationId}},
       {
         $lookup:
           {
@@ -61,6 +118,11 @@ const game = async ({ctx, text = ''}) => {
           }
         }
       },
+      {
+        $match: {
+          gameType: "standardGame",
+        }
+      },
     ])
     const gameButtons = [];
     for (const game of locationGames) {
@@ -68,70 +130,15 @@ const game = async ({ctx, text = ''}) => {
         {text: `${game.name}`, callback_data: `gTo:gId/lG=${game._id}`}, // gId = gameId
       ])
     }
-    ctx.reply(`Games`, {reply_markup: JSON.stringify({inline_keyboard: gameButtons})}).then(async (e) => {
+    bot.telegram.sendMessage(userId, `Games`, {reply_markup: JSON.stringify({inline_keyboard: gameButtons})}).then(async (e) => {
       const newMessage = new Messages({
         messageId: e.message_id,
-        userId: ctx.state.userId,
+        userId,
         messagesType: 'delete'
       })
       await newMessage.save()
     })
   }
-  return false
-}
-const showGame = async ({ctx, text}) => {
-  ctx.deleteMessage().catch(err => {
-    console.log(err)
-  })
-  const [, locationGameText] = text.split('/')
-  const [, locationGameId] = locationGameText.split('=')
-  const locationGameData = await LocationGame.findById(locationGameId)
-  await deleteMessagesFunction(ctx)
-  if (locationGameData.location) {
-    const deleteMessage = await ctx.replyWithLocation(...locationGameData.location.split(', '))
-    const newMessage = new Messages({
-      messageId: deleteMessage.message_id,
-      userId: ctx.state.userId,
-      messagesType: 'delete'
-    })
-    await newMessage.save()
-  }
-  const gameData = await Game.findById(locationGameData.gameId)
-  const gameButtons = [
-    [{ text: `play Game`, callback_data: `gTo:pG/lGId=${locationGameId}`}, // pG = playGame, gTo = gameTo, lGId = locationGameId,
-      { text: `🔙 back ↩`, callback_data: `gTo:gM/lGId=${locationGameId}`}] // gM = gameMenu, gTo = gameTo
-  ];
-  ctx.reply(gameData.description, { reply_markup: JSON.stringify({ inline_keyboard: gameButtons})})
-}
-const playGame = async ({ctx, text}) => {
-  ctx.deleteMessage().catch(err => {
-    console.log(err)
-  })
-  // await deleteMessagesFunction(ctx) todo this deleted game location
-  const [,locationGame] = text.split('/')
-  const [,locationGameId] = locationGame.split('=')
-  const locationGameData = await LocationGame.findById(locationGameId)
-  const gameData = await Game.findById(locationGameData.gameId)
-  await Users.updateOne({id: ctx.state.userId}, {playingGameId: locationGameData._id, $push: { "playedGames" : gameData.gameCode } })
-  ctx.reply(
-    `<b>Now you are playing <i>${gameData.name}</i></b>
-${gameData.fullDescription}`, {
-      parse_mode: 'html'
-    })
-}
-const approveGame = async ({ctx, text}) => {
-  ctx.deleteMessage().catch(err => {
-    console.log(err)
-  })
-  const [,user] = text.split('/')
-  const [,userId] = user.split('=')
-  await updateUser({id: userId, data: {
-      playingGameId: undefined
-    }})
-  const gameButtons = [
-    [{ text: `play game`, callback_data: `gTo:gM`}] // gM = gameMenu, gTo = gameTo
-  ];
-  await ctx.telegram.sendMessage(userId, 'շնորհավորում եմ դուք հաղթահարել եք խաղը', { reply_markup: JSON.stringify({ inline_keyboard: gameButtons})})
 }
 const rejectGame = async ({ctx, text}) => {
   ctx.deleteMessage().catch(err => {
@@ -147,7 +154,7 @@ const gameTo = async (ctx) => {
     await showGame({ctx, text})
   }
   if(text.includes('gM')) {
-    await game({ctx, text})
+    await showGameMenu(ctx.state.userId)
   }
   if(text.includes('pG')) {
     await playGame({ctx, text})
@@ -161,7 +168,7 @@ const gameTo = async (ctx) => {
 
   return false
 }
-module.exports = {game, gameTo}
+module.exports = {showGameMenu, gameTo}
 
 // const {MenuTemplate, MenuMiddleware, createBackMainMenuButtons} = require('telegraf-inline-menu')
 // const locationGame = require('../location/locationGame.schema')

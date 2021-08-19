@@ -1,5 +1,6 @@
 const Users = require("../user/user.schema");
 const {getUserInfo, getUserById, updateUser, getUserByVerificationCode} = require("../user/user");
+const {showGameMenu} = require("./game");
 
 const myCommands = {
   stop: 'chatting is stop',
@@ -38,6 +39,7 @@ const interceptor = async (ctx, next) => {
   if (!user.teamName) {
     await Users.updateOne({id: user.id}, {teamName: ctx.message.text})
     ctx.reply(`Your team Name is <b>${ctx.message.text}</b>`, {parse_mode: 'HTML'})
+    await showGameMenu(user.id)
     return false
   }
 

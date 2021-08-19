@@ -32,8 +32,7 @@ const onPhoto = async (ctx) => {
     gameName: game.name,
     gameLocation: game.location,
   })
-  // console.log(photo.href); todo save photo.href
-  if (ctx.state?.chatTo) {
+  if (ctx.state?.chatTo && ctx.state?.role === 'player') {
     await ctx.telegram.sendMessage(ctx.state.chatTo, `
 <b>plyerCode</b>: <b>${ctx.state.user.code}</b>
 <b>playerTeamName</b>: ${ctx.state.user.teamName}
@@ -48,9 +47,43 @@ const onPhoto = async (ctx) => {
       ];
       await ctx.telegram.sendMessage(ctx.state.chatTo, `GameName: ${game[0].gameData.name}`, {reply_markup: JSON.stringify({inline_keyboard: gameButtons})})
     }
+  } else {
+    await ctx.telegram.sendPhoto(ctx.state.chatTo, ctx.message.photo.pop().file_id)
+  }
+}
+const onVideo = async (ctx) => {
+  const video = await ctx.telegram.getFileLink(ctx.message.video.file_id)
+  const game = await getLocationGameData(ctx.state.playingGameId)
+  await saveFile({
+    userId: ctx.state.user.id,
+    userTeamName: ctx.state.user.teamName,
+    userCode: ctx.state.user.code,
+    fileHref: video.href,
+    fileType: 'video',
+    gameName: game.name,
+    gameLocation: game.location,
+  })
+  if (ctx.state?.chatTo && ctx.state?.role === 'player') {
+    await ctx.telegram.sendMessage(ctx.state.chatTo, `
+<b>plyerCode</b>: <b>${ctx.state.user.code}</b>
+<b>playerTeamName</b>: ${ctx.state.user.teamName}
+<i>send you a Video</i>`, {
+      parse_mode: 'html'
+    })
+    await ctx.telegram.sendVideo(ctx.state.chatTo, ctx.message.video.file_id)
+    if (game.length) {
+      const gameButtons = [
+        [{ text: `✅ approve`, callback_data: `gTo:app/uId=${ctx.state.userId}`}, // app = approve, gTo = gameTo, uId = userId,
+          { text: `❌ reject`, callback_data: `gTo:rej/uId=${ctx.state.userId}`}] // rej = reject, gTo = gameTo, uId = userId,
+      ];
+      await ctx.telegram.sendMessage(ctx.state.chatTo, `GameName: ${game[0].gameData.name}`, {reply_markup: JSON.stringify({inline_keyboard: gameButtons})})
+    }
+  } else {
+    await ctx.telegram.sendVideo(ctx.state.chatTo, ctx.message.video.file_id)
   }
 }
 module.exports = {
   onText,
-  onPhoto
+  onPhoto,
+  onVideo
 }

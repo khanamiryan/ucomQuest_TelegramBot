@@ -5,6 +5,10 @@ const locationSchema = mongoose.Schema({
     type: String,
     required: true
   },
+  startDescription: {
+    type: String,
+    required: true
+  },
   location: {
     type: String,
     required: true

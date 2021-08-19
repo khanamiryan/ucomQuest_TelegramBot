@@ -1,13 +1,13 @@
-const {Telegraf } = require('telegraf');
+const {Telegraf} = require('telegraf');
 const bot = new Telegraf(process.env.botToken, {
   polling: true,
 });
-const {game, gameTo} = require('./game')
+const {showGameMenu, gameTo} = require('./game')
 const buttonsTemplate = require('./buttonsTemplate')
 const interceptor = require('./interceptor')
 const admin = require('./admin')
 const {updateUser} = require("../user/user");
-const {onText, onPhoto} = require("./playerOnData");
+const {onText, onPhoto, onVideo} = require("./playerOnData");
 
 bot.use(async (ctx, next) => interceptor(ctx, next))
 
@@ -47,11 +47,12 @@ bot.command('templates', async ctx => buttonsTemplate.replyToContext(ctx))
 bot.command('admin', async ctx => adminPage(ctx))
 // bot.command('game', async ctx => GameMenu.replyToContext(ctx))
 
-bot.command('game', async ctx => game({ctx})) // open Games Menu
+bot.command('game', async ctx => showGameMenu(ctx.state.userId)) // open Games Menu
 bot.action(/^gTo/, async (ctx) => gameTo(ctx)) // gameTo
 
 bot.on('text', async (ctx) => onText(ctx))
 bot.on('photo', async (ctx) => onPhoto(ctx))
+bot.on('video', async (ctx) => onVideo(ctx))
 
 bot.action(/^textTo/, async (ctx) => {
   const [,userId, userCode] = ctx.update.callback_query.data.split(':')
