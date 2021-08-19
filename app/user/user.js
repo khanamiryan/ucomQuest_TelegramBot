@@ -40,8 +40,8 @@ router.get('/admins', (req, res) => {
   })
 })
 router.post('/', async (req, res) => {
-  const code = await Users.findOne({code: req.body.code})
-  if (code?.code) {
+  const user = await Users.findOne({ $or: [{code: req.body.code}, {verificationCode: req.body.verificationCode}]})
+  if (user?.code || user?.verificationCode) {
     res.json({error: 'use other code'})
   } else {
     const newUser = new Users({...req.body, ...req.body.admin});
@@ -110,10 +110,14 @@ const updateUser = async ({id, data}) => {
 const getUserByCode = async (code) => {
   return Users.findOne({code});
 }
+const getUserByVerificationCode = async (verificationCode) => {
+  return Users.findOne({verificationCode});
+}
 
 
 module.exports = {
   router,
+  getUserByVerificationCode,
   getUserInfo,
   getUserById,
   updateUser,

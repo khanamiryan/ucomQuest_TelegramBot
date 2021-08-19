@@ -1,13 +1,7 @@
 const mongoose = require('mongoose');
 
 const userSchema = mongoose.Schema({
-  first_name: {
-    type: String,
-  },
-  last_name: {
-    type: String,
-  },
-  username: {
+  teamName: {
     type: String,
   },
   id: {
@@ -31,6 +25,9 @@ const userSchema = mongoose.Schema({
   code: {
     type: String,
   },
+  verificationCode: {
+    type: String,
+  },
   playingLocationId: {
     type: mongoose.Schema.Types.ObjectId,
   },
@@ -38,7 +35,7 @@ const userSchema = mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
   },
   playedGames: {
-    type: [mongoose.Schema.Types.ObjectId],
+    type: [String],
   }
 }, {
   versionKey: false,

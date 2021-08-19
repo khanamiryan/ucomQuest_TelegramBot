@@ -1,5 +1,6 @@
 const {getUserByCode} = require("../user/user");
 const {getLocationGameData} = require("../location/location");
+const {saveFile} = require("../file/file");
 const onText = async (ctx) => {
   const [code, text] = ctx.message?.text.split(':')
   const user = code ? await getUserByCode(code) : null;
@@ -20,12 +21,26 @@ const onText = async (ctx) => {
   }
 }
 const onPhoto = async (ctx) => {
+  const photo = await ctx.telegram.getFileLink(ctx.message.photo.pop().file_id)
+  const game = await getLocationGameData(ctx.state.playingGameId)
+  await saveFile({
+    userId: ctx.state.user.id,
+    userTeamName: ctx.state.user.teamName,
+    userCode: ctx.state.user.code,
+    fileHref: photo.href,
+    fileType: 'photo',
+    gameName: game.name,
+    gameLocation: game.location,
+  })
+  // console.log(photo.href); todo save photo.href
   if (ctx.state?.chatTo) {
-    await ctx.telegram.sendMessage(ctx.state.chatTo, `<b>${ctx.state.user.code} send a photo</b>`, {
+    await ctx.telegram.sendMessage(ctx.state.chatTo, `
+<b>plyerCode</b>: <b>${ctx.state.user.code}</b>
+<b>playerTeamName</b>: ${ctx.state.user.teamName}
+<i>send you a photo</i>`, {
       parse_mode: 'html'
     })
     await ctx.telegram.sendPhoto(ctx.state.chatTo, ctx.message.photo.pop().file_id)
-    const game = await getLocationGameData(ctx.state.playingGameId)
     if (game.length) {
       const gameButtons = [
         [{ text: `✅ approve`, callback_data: `gTo:app/uId=${ctx.state.userId}`}, // app = approve, gTo = gameTo, uId = userId,

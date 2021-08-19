@@ -5,6 +5,14 @@ const gameSchema = mongoose.Schema({
     type: String,
     required: true
   },
+  gameCode: {
+    type: String,
+    required: true
+  },
+  gameType: {
+    type: String,
+    required: true
+  },
   description: {
     type: String,
     required: true

@@ -38,15 +38,6 @@ const game = async ({ctx, text = ''}) => {
       {$match: {id: ctx.state.userId}},
     ])
     const locationGames = await LocationGame.aggregate([
-      {
-        $match: {
-          gameId: {
-            $not: {
-              $in: userGames[0].playedGames
-            }
-          }
-        }
-      },
       {$match: {locationId: ctx.state.playingLocationId}},
       {
         $lookup:
@@ -60,7 +51,16 @@ const game = async ({ctx, text = ''}) => {
       {
         $replaceRoot: {newRoot: {$mergeObjects: [{$arrayElemAt: ["$gamesInfo", 0]}, "$$ROOT"]}}
       },
-      {$project: {gamesInfo: 0}}
+      {$project: {gamesInfo: 0}},
+      {
+        $match: {
+          gameCode: {
+            $not: {
+              $in: userGames[0].playedGames
+            }
+          }
+        }
+      },
     ])
     const gameButtons = [];
     for (const game of locationGames) {
@@ -112,7 +112,7 @@ const playGame = async ({ctx, text}) => {
   const [,locationGameId] = locationGame.split('=')
   const locationGameData = await LocationGame.findById(locationGameId)
   const gameData = await Game.findById(locationGameData.gameId)
-  await Users.updateOne({id: ctx.state.userId}, {playingGameId: locationGameData._id, $push: { "playedGames" : locationGameData.gameId } })
+  await Users.updateOne({id: ctx.state.userId}, {playingGameId: locationGameData._id, $push: { "playedGames" : gameData.gameCode } })
   ctx.reply(
     `<b>Now you are playing <i>${gameData.name}</i></b>
 ${gameData.fullDescription}`, {

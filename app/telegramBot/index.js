@@ -75,7 +75,7 @@ const adminPage = async (ctx) => {
 }
 
 //
-// const menuTemplate = new MenuTemplate<MyContext>(ctx => `Hey ${ctx.from.first_name}!`)
+// const menuTemplate = new MenuTemplate<MyContext>(ctx => `Hey ${ctx.from.teamName}!`)
 //
 // menuTemplate.interact('I am excited!', 'a', {
 //   do: async ctx => {

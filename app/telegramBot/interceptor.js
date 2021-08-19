@@ -1,5 +1,5 @@
 const Users = require("../user/user.schema");
-const {getUserInfo, getUserById, getUserByCode, updateUser} = require("../user/user");
+const {getUserInfo, getUserById, updateUser, getUserByVerificationCode} = require("../user/user");
 
 const myCommands = {
   stop: 'chatting is stop',
@@ -10,15 +10,16 @@ const myCommands = {
 const interceptor = async (ctx, next) => {
 
   let user = await getUserById(ctx.from.id)
+  // verify user by verificationCode
   if(!user) {
-    const code = await getUserByCode(ctx.message.text)
-    if (code) {
-      if (code.id) {
+    const verificationCode = await getUserByVerificationCode(ctx.message.text)
+    if (verificationCode) {
+      if (verificationCode.id) {
         return false
       }
-      await Users.updateOne({code: ctx.message.text}, ctx.from)
-      await ctx.reply('you are connected')
-      user = await getUserById(ctx.from.id)
+      await Users.updateOne({verificationCode: ctx.message.text}, ctx.from)
+      await ctx.reply(`you are connected\nplease insert your Team Name`)
+      return false
     } else {
       await ctx.reply('please insert CODE')
       return false
@@ -30,7 +31,16 @@ const interceptor = async (ctx, next) => {
   ctx.state.playingGameId = user.playingGameId || '';
   ctx.state.userId = user.id || '';
   ctx.state.userData_Id = user._id || '';
+  ctx.state.teamName = user.teamName || '';
   ctx.state.user = user || {};
+
+  // set team name if not exist
+  if (!user.teamName) {
+    await Users.updateOne({id: user.id}, {teamName: ctx.message.text})
+    ctx.reply(`Your team Name is <b>${ctx.message.text}</b>`, {parse_mode: 'HTML'})
+    return false
+  }
+
   const [code, text] = ctx?.message?.text ? ctx?.message?.text.split(':') : []
   if (ctx.state.role === 'admin' && myCommands[code]) {
     switch (code) {
@@ -45,10 +55,10 @@ const interceptor = async (ctx, next) => {
         if (player.length) {
           await ctx.reply(`
 <b>code</b>: <i>${player[0].code}</i>
-<b>first_name</b>: <i>${player[0].first_name}</i>
-<b>location</b>: <i>${player[0].locationData?.name}</i>
-<b>game</b>: <i>${player[0].gameData?.name}</i>
-<b>gameLocation</b>: <i>${player[0].playingGameData?.location}</i>
+<b>Team Name</b>: <i>${player[0].teamName}</i>
+<b>location</b>: <i>${player[0].locationData?.name || "doesn't exist"}</i>
+<b>game</b>: <i>${player[0].gameData?.name || "doesn't exist"}</i>
+<b>gameLocation</b>: <i>${player[0].playingGameData?.location || "doesn't exist"}</i>
           `, {
             parse_mode: 'html'
           })
@@ -56,7 +66,7 @@ const interceptor = async (ctx, next) => {
             await ctx.replyWithLocation(...player[0].playingGameData?.location.split(', '))
           }
         } else {
-          await ctx.reply(`this "${text}" player not found`)
+          await ctx.reply(`this "<b>${text.trim()}</b>" player not found`, {parse_mode: 'HTML'})
         }
         break
     }

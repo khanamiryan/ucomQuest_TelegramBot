@@ -2,7 +2,7 @@ const {MenuTemplate, MenuMiddleware, createBackMainMenuButtons} = require('teleg
 const Users = require('../user/user.schema')
 
 const findUsers = async (condition ={}) => {
-  return Users.find({...condition,role: 'player', first_name: { $exists: true }})
+  return Users.find({...condition,role: 'player', id: { $exists: true }})
 }
 
 const menu = new MenuTemplate(() => 'Admin page')
