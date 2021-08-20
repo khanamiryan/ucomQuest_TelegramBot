@@ -39,7 +39,8 @@ const interceptor = async (ctx, next) => {
   if (!user.teamName) {
     await Users.updateOne({id: user.id}, {teamName: ctx.message.text})
     ctx.reply(`Your team Name is <b>${ctx.message.text}</b>`, {parse_mode: 'HTML'})
-    await showGameMenu(user.id)
+    ctx.state.teamName = ctx.message.text
+    user.role === 'player' && await showGameMenu(user.id)
     return false
   }
 

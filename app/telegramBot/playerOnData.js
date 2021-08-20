@@ -1,5 +1,5 @@
 const {getUserByCode} = require("../user/user");
-const {getLocationGameData} = require("../location/location");
+const {getLocationGameData, getLocation, getLocationDataById} = require("../location/location");
 const {saveFile} = require("../file/file");
 const onText = async (ctx) => {
   const [code, text] = ctx.message?.text.split(':')
@@ -42,10 +42,18 @@ const onPhoto = async (ctx) => {
     await ctx.telegram.sendPhoto(ctx.state.chatTo, ctx.message.photo.pop().file_id)
     if (game.length) {
       const gameButtons = [
-        [{ text: `✅ approve`, callback_data: `gTo:app/uId=${ctx.state.userId}`}, // app = approve, gTo = gameTo, uId = userId,
-          { text: `❌ reject`, callback_data: `gTo:rej/uId=${ctx.state.userId}`}] // rej = reject, gTo = gameTo, uId = userId,
+        [{ text: `✅ approve`, callback_data: `gTo:appG/uId=${ctx.state.userId}`}, // appG = approve Game, uId = userId,
+          { text: `❌ reject`, callback_data: `gTo:rejG/uId=${ctx.state.userId}`}] // rejG = reject Game, uId = userId,
       ];
       await ctx.telegram.sendMessage(ctx.state.chatTo, `GameName: ${game[0].gameData.name}`, {reply_markup: JSON.stringify({inline_keyboard: gameButtons})})
+    } else if (ctx.state.user.playStatus === 'goingLocation') {
+      const userLocation = await getLocationDataById(ctx.state.user.playingLocationId);
+      const gameButtons = [
+        [{ text: `✅ approve`, callback_data: `gTo:appL/uId=${ctx.state.userId}`}, // appL = approve Location, uId = userId,
+          { text: `❌ reject`, callback_data: `gTo:rejL/uId=${ctx.state.userId}`}] // rejL = reject Location, uId = userId,
+      ];
+      await ctx.telegram.sendMessage(ctx.state.chatTo, `Going To: ${userLocation.name}`, {reply_markup: JSON.stringify({inline_keyboard: gameButtons})})
+
     }
   } else {
     await ctx.telegram.sendPhoto(ctx.state.chatTo, ctx.message.photo.pop().file_id)
@@ -73,8 +81,8 @@ const onVideo = async (ctx) => {
     await ctx.telegram.sendVideo(ctx.state.chatTo, ctx.message.video.file_id)
     if (game.length) {
       const gameButtons = [
-        [{ text: `✅ approve`, callback_data: `gTo:app/uId=${ctx.state.userId}`}, // app = approve, gTo = gameTo, uId = userId,
-          { text: `❌ reject`, callback_data: `gTo:rej/uId=${ctx.state.userId}`}] // rej = reject, gTo = gameTo, uId = userId,
+        [{ text: `✅ approve`, callback_data: `gTo:appG/uId=${ctx.state.userId}`}, // app = approve, gTo = gameTo, uId = userId,
+          { text: `❌ reject`, callback_data: `gTo:rejG/uId=${ctx.state.userId}`}] // rej = reject, gTo = gameTo, uId = userId,
       ];
       await ctx.telegram.sendMessage(ctx.state.chatTo, `GameName: ${game[0].gameData.name}`, {reply_markup: JSON.stringify({inline_keyboard: gameButtons})})
     }

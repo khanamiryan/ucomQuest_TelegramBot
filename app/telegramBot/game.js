@@ -4,7 +4,7 @@ const Users = require('../user/user.schema')
 const Messages = require('../messages/messages.schema')
 const {updateUser, getUserById} = require("../user/user");
 const {Telegraf} = require('telegraf');
-const {getLocationGameData, getLocationDataById} = require("../location/location");
+const {getLocationDataById} = require("../location/location");
 const bot = new Telegraf(process.env.botToken, {
   polling: true,
 });
@@ -72,18 +72,6 @@ ${gameData.fullDescription}`, {
       parse_mode: 'html'
     })
 }
-const approveGame = async ({ctx, text}) => {
-  ctx.deleteMessage().catch(err => {
-    console.log(err)
-  })
-  const [,user] = text.split('/')
-  const [,userId] = user.split('=')
-  await updateUser({id: userId, data: {
-      playingGameId: undefined
-    }})
-  await ctx.telegram.sendMessage(userId, 'շնորհավորում եմ դուք հաղթահարել եք խաղը')
-  await showGameMenu(userId)
-}
 
 // Game Menu
 const showGameMenu = async (userId) => {
@@ -145,7 +133,38 @@ const showGameMenu = async (userId) => {
     })
   }
 }
+const approveGame = async ({ctx, text}) => {
+  ctx.deleteMessage().catch(err => {
+    console.log(err)
+  })
+  const [,user] = text.split('/')
+  const [,userId] = user.split('=')
+  console.log('userId', userId);
+  await updateUser({id: userId, data: {
+      playingGameId: undefined
+    }})
+  await ctx.telegram.sendMessage(userId, 'շնորհավորում եմ դուք հաղթահարել եք խաղը')
+  await showGameMenu(userId)
+}
 const rejectGame = async ({ctx, text}) => {
+  await reject({ctx, text})
+}
+const approveLocation = async ({ctx, text}) => {
+  ctx.deleteMessage().catch(err => {
+    console.log(err)
+  })
+  const [,user] = text.split('/')
+  const [,userId] = user.split('=')
+  await updateUser({id: userId, data: {
+      playStatus: 'playingGame'
+    }})
+  await ctx.telegram.sendMessage(userId, 'դուք հասաք նշված վայր')
+  await showGameMenu(userId)
+}
+const rejectLocation = async ({ctx, text}) => {
+  await reject({ctx, text})
+}
+const reject = async ({ctx, text}) => {
   ctx.deleteMessage().catch(err => {
     console.log(err)
   })
@@ -155,22 +174,23 @@ const rejectGame = async ({ctx, text}) => {
 }
 const gameTo = async (ctx) => {
   const [, text] = ctx.update.callback_query.data.split(':')
-  if(text.includes('gId')) { // gId = gameId
-    await showGame({ctx, text})
+  const [command] = text.split('/')
+  switch (command) {
+    case 'gId': await showGame({ctx, text})
+      break;
+    case 'gM': await showGameMenu(ctx.state.userId)
+      break;
+    case 'pG': await playGame({ctx, text})
+      break;
+    case 'appG': await approveGame({ctx, text})
+      break;
+    case 'rejG': await rejectGame({ctx, text})
+      break;
+    case 'appL': await approveLocation({ctx, text})
+      break;
+    case 'rejL': await rejectLocation({ctx, text})
+      break;
   }
-  if(text.includes('gM')) {
-    await showGameMenu(ctx.state.userId)
-  }
-  if(text.includes('pG')) {
-    await playGame({ctx, text})
-  }
-  if(text.includes('app')) {
-    await approveGame({ctx, text})
-  }
-  if(text.includes('rej')) {
-    await rejectGame({ctx, text})
-  }
-
   return false
 }
 module.exports = {showGameMenu, gameTo}
