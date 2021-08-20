@@ -88,6 +88,8 @@ const showGameMenu = async (userId) => {
     const userGames = await Users.aggregate([
       {$match: {id: userId}},
     ])
+    const locationData = await getLocationDataById(user.playingLocationId)
+    const gameType =  user.locationPoint < locationData.finishPoint ? 'standardGame' : 'levelUp'
     const locationGames = await LocationGame.aggregate([
       {$match: {locationId: user.playingLocationId}},
       {
@@ -114,7 +116,7 @@ const showGameMenu = async (userId) => {
       },
       {
         $match: {
-          gameType: "standardGame",
+          gameType,
         }
       },
     ])
