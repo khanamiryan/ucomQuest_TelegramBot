@@ -4,7 +4,8 @@ const Users = require('../user/user.schema')
 const Messages = require('../messages/messages.schema')
 const {updateUser, getUserById} = require("../user/user");
 const {Telegraf} = require('telegraf');
-const {getLocationDataById} = require("../location/location");
+const {getLocationDataById, getLocationGameData} = require("../location/location");
+const {getGameById} = require("../game/game");
 const bot = new Telegraf(process.env.botToken, {
   polling: true,
 });
@@ -139,9 +140,13 @@ const approveGame = async ({ctx, text}) => {
   })
   const [,user] = text.split('/')
   const [,userId] = user.split('=')
-  console.log('userId', userId);
+  const userData = await getUserById(userId)
+  const game = await getLocationGameData(userData.playingGameId)
   await updateUser({id: userId, data: {
-      playingGameId: undefined
+      playingGameId: undefined,
+      $inc: {
+        locationPoint: +game[0].gameData.point
+      }
     }})
   await ctx.telegram.sendMessage(userId, 'շնորհավորում եմ դուք հաղթահարել եք խաղը')
   await showGameMenu(userId)

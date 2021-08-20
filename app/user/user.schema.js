@@ -45,6 +45,14 @@ const userSchema = mongoose.Schema({
   },
   playStatus: {
     type: String,
+  },
+  locationPoint: {
+    type: Number,
+    default: 0,
+  },
+  allPoint: {
+    type: Number,
+    default: 0,
   }
 }, {
   versionKey: false,

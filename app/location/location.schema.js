@@ -13,6 +13,14 @@ const locationSchema = mongoose.Schema({
     type: String,
     required: true
   },
+  finishPoint: {
+    type: Number,
+    required: true
+  },
+  finishTime: {
+    type: Number,
+    required: true
+  },
 }, {
   versionKey: false,
   timestamps: true,
