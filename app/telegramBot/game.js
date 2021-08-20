@@ -126,6 +126,16 @@ const showGameMenu = async (userId) => {
         {text: `${game.name}`, callback_data: `gTo:gId/lG=${game._id}`}, // gId = gameId
       ])
     }
+    if (gameType === 'levelUp') {
+      await bot.telegram.sendMessage(userId, `You are levelUp`).then(async (e) => {
+        const newMessage = new Messages({
+          messageId: e.message_id,
+          userId,
+          messagesType: 'delete'
+        })
+        await newMessage.save()
+      });
+    }
     await bot.telegram.sendMessage(userId, `Games`, {reply_markup: JSON.stringify({inline_keyboard: gameButtons})}).then(async (e) => {
       const newMessage = new Messages({
         messageId: e.message_id,
