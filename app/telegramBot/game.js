@@ -109,6 +109,12 @@ const showGameMenu = async (userId) => {
           gameType,
         }
       },
+      // TODO: maxPlayerCount must lt nowPlaying
+      // {
+      //   $match: {
+      //     maxPlayerCount: { $gt: 0 },
+      //   }
+      // },
     ])
     const gameButtons = [];
     for (const game of games) {
@@ -147,6 +153,13 @@ const approveGame = async ({ctx, text}) => {
   const userData = await getUserById(userId)
   if (userData.playStatus === 'playingGame') {
     const game = await getGameById(userData.playingGameId)
+    await updateGame(
+      {_id: userData.playingGameId},
+      {
+        $inc: {
+          nowPlaying: -1
+        }
+      })
     await updateUser({id: userId, data: {
         playingGameId: undefined,
         $inc: {

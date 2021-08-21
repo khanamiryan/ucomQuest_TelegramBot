@@ -38,7 +38,7 @@ const interceptor = async (ctx, next) => {
   // set team name if not exist
   if (!user.teamName) {
     await Users.updateOne({id: user.id}, {teamName: ctx.message.text})
-    ctx.reply(`Your team Name is <b>${ctx.message.text}</b>`, {parse_mode: 'HTML'})
+    await ctx.reply(`Your team Name is <b>${ctx.message.text}</b>`, {parse_mode: 'HTML'})
     ctx.state.teamName = ctx.message.text
     user.role === 'player' && await showGameMenu(user.id)
     return false

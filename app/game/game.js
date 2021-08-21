@@ -39,7 +39,7 @@ const getGameById = (id) => {
   return Games.findById(id)
 }
 const updateGame = (filter, data) => {
-  return Games.findOneAndUpdate(filter, data)
+  return Games.updateOne(filter, data)
 }
 
 module.exports = {
