@@ -57,7 +57,6 @@ router.put('/', async (req, res) => {
   if ((user?.code || user?.verificationCode) && user._id.toString() !== req.body._id) {
     res.json({error: 'use other code'})
   } else {
-    console.log(req.body);
     const user = await Users.updateOne({_id: req.body._id}, req.body);
     res.json(user)
   }
