@@ -24,6 +24,7 @@ const onPhoto = async (ctx) => {
   const photo = await ctx.telegram.getFileLink(ctx.message.photo.pop().file_id)
   const game = await getLocationGameData(ctx.state.playingGameId)
   await saveFile({
+    fileId: ctx.message.photo.pop().file_id,
     userId: ctx.state.user.id,
     userTeamName: ctx.state.user.teamName,
     userCode: ctx.state.user.code,
@@ -63,6 +64,7 @@ const onVideo = async (ctx) => {
   const video = await ctx.telegram.getFileLink(ctx.message.video.file_id)
   const game = await getLocationGameData(ctx.state.playingGameId)
   await saveFile({
+    fileId: ctx.message.video.file_id,
     userId: ctx.state.user.id,
     userTeamName: ctx.state.user.teamName,
     userCode: ctx.state.user.code,

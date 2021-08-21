@@ -22,6 +22,9 @@ const filesSchema = mongoose.Schema({
   fileType: {
     type: String
   },
+  fileId: {
+    type: String
+  },
   fileHref: {
     type: String,
     required: true,

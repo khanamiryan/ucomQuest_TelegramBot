@@ -52,6 +52,16 @@ router.post('/', async (req, res) => {
     res.json(user)
   }
 })
+router.put('/', async (req, res) => {
+  const user = await Users.findOne({ $or: [{code: req.body.code}, {verificationCode: req.body.verificationCode}]})
+  if ((user?.code || user?.verificationCode) && user._id.toString() !== req.body._id) {
+    res.json({error: 'use other code'})
+  } else {
+    console.log(req.body);
+    const user = await Users.updateOne({_id: req.body._id}, req.body);
+    res.json(user)
+  }
+})
 router.delete('/:id', async (req, res) => {
   await Users.deleteOne({_id: req.params.id})
   res.json(true)
