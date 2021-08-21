@@ -16,6 +16,9 @@ const messagesSchema = mongoose.Schema({
   status: {
     type: String,
     default: 'active',
+  },
+  text: {
+    type: String,
   }
 }, {
   versionKey: false,

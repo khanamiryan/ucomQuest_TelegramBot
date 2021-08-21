@@ -48,6 +48,7 @@ bot.command('admin', async ctx => adminPage(ctx))
 // bot.command('game', async ctx => GameMenu.replyToContext(ctx))
 
 bot.command('game', async ctx => showGameMenu(ctx.state.userId)) // open Games Menu
+bot.command('start', async ctx => showGameMenu(ctx.state.userId)) // open Games Menu
 bot.action(/^gTo/, async (ctx) => gameTo(ctx)) // gameTo
 
 bot.on('text', async (ctx) => onText(ctx))
