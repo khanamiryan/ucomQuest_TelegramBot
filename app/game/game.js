@@ -13,7 +13,21 @@ router.put('/', async (req, res) => {
   res.json(game)
 })
 router.get('/', async (req, res) => {
-  const games = await Games.find()
+  const games = await Games.aggregate([
+    {
+      $lookup:
+        {
+          from: "locations",
+          localField: "locationId",
+          foreignField: "_id",
+          as: "locationData"
+        }
+    },
+    {
+      $addFields: {locationName: { $arrayElemAt: [ "$locationData.name", 0 ] }}
+    },
+    {$project: {locationData: 0}},
+  ])
   res.json(games)
 })
 router.delete('/:id', async (req, res) => {
@@ -24,8 +38,13 @@ router.delete('/:id', async (req, res) => {
 const getGameById = (id) => {
   return Games.findById(id)
 }
+const updateGame = (filter, data) => {
+  return Games.findOneAndUpdate(filter, data)
+}
 
 module.exports = {
+  Games,
   getGameById,
+  updateGame,
   router
 };

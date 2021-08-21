@@ -26,11 +26,6 @@ menu.interact(`User List`, 'userList', {
 });
 
 menu.manualRow(createBackMainMenuButtons())
-// menu.submenu('User List', 'userList', userList, {
-//   // hide: () => mainMenuToggle,
-// })
-
-
 const menuMiddleware = new MenuMiddleware('admin/', menu)
 
 console.log(menuMiddleware.tree())

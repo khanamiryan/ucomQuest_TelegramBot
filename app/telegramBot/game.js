@@ -1,11 +1,10 @@
-const LocationGame = require('../location/locationGame.schema')
 const Game = require('../game/game.schema')
 const Users = require('../user/user.schema')
 const Messages = require('../messages/messages.schema')
 const {updateUser, getUserById} = require("../user/user");
 const {Telegraf} = require('telegraf');
-const {getLocationDataById, getLocationGameData} = require("../location/location");
-const {getGameById} = require("../game/game");
+const {getLocationDataById} = require("../location/location");
+const {getGameById, updateGame} = require("../game/game");
 const {newMessage} = require("../messages/messages");
 const bot = new Telegraf(process.env.botToken, {
   polling: true,
@@ -34,16 +33,15 @@ const deleteMessagesFunction = async (userId) => {
 const showGame = async ({ctx, text}) => {
   const [, locationGameText] = text.split('/')
   const [, locationGameId] = locationGameText.split('=')
-  const locationGameData = await LocationGame.findById(locationGameId)
+  const gameData = await Game.findById(locationGameId)
   await deleteMessagesFunction(ctx.state.userId)
-  if (locationGameData.location) {
-    const deleteMessage = await ctx.replyWithLocation(...locationGameData.location.split(', '))
+  if (gameData.location) {
+    const deleteMessage = await ctx.replyWithLocation(...gameData.location.split(', '))
     await newMessage({
       messageId: deleteMessage.message_id,
       userId: ctx.state.userId,
     })
   }
-  const gameData = await Game.findById(locationGameData.gameId)
   const gameButtons = [
     [{ text: `play Game`, callback_data: `gTo:pG/lGId=${locationGameId}`}, // pG = playGame, gTo = gameTo, lGId = locationGameId,
       { text: `🔙 back ↩`, callback_data: `gTo:gM/lGId=${locationGameId}`}] // gM = gameMenu, gTo = gameTo
@@ -61,9 +59,15 @@ const playGame = async ({ctx, text}) => {
   })
   const [,locationGame] = text.split('/')
   const [,locationGameId] = locationGame.split('=')
-  const locationGameData = await LocationGame.findById(locationGameId)
-  const gameData = await Game.findById(locationGameData.gameId)
-  await Users.updateOne({id: ctx.state.userId}, {playingGameId: locationGameData._id, $push: { "playedGames" : gameData.gameCode } })
+  const gameData = await Game.findById(locationGameId)
+  await updateGame(
+    {_id: gameData._id},
+    {
+      $inc: {
+        nowPlaying: +1
+      }
+    })
+  await Users.updateOne({id: ctx.state.userId}, {playingGameId: gameData._id, $push: { "playedGames" : gameData.gameCode } })
   ctx.reply(
     `<b>Now you are playing <i>${gameData.name}</i></b>
 ${gameData.fullDescription}`, {
@@ -89,21 +93,8 @@ const showGameMenu = async (userId) => {
     ])
     const locationData = await getLocationDataById(user.playingLocationId)
     const gameType =  user.locationPoint < locationData.finishPoint ? 'standardGame' : 'levelUp'
-    const locationGames = await LocationGame.aggregate([
+    const games = await Game.aggregate([
       {$match: {locationId: user.playingLocationId}},
-      {
-        $lookup:
-          {
-            from: "games",
-            localField: "gameId",
-            foreignField: "_id",
-            as: "gamesInfo"
-          }
-      },
-      {
-        $replaceRoot: {newRoot: {$mergeObjects: [{$arrayElemAt: ["$gamesInfo", 0]}, "$$ROOT"]}}
-      },
-      {$project: {gamesInfo: 0}},
       {
         $match: {
           gameCode: {
@@ -120,7 +111,7 @@ const showGameMenu = async (userId) => {
       },
     ])
     const gameButtons = [];
-    for (const game of locationGames) {
+    for (const game of games) {
       gameButtons.unshift([
         {text: `${game.name}`, callback_data: `gTo:gId/lG=${game._id}`}, // gId = gameId
       ])
@@ -155,11 +146,11 @@ const approveGame = async ({ctx, text}) => {
   const [,userId] = user.split('=')
   const userData = await getUserById(userId)
   if (userData.playStatus === 'playingGame') {
-    const game = await getLocationGameData(userData.playingGameId)
+    const game = await getGameById(userData.playingGameId)
     await updateUser({id: userId, data: {
         playingGameId: undefined,
         $inc: {
-          locationPoint: +game[0].gameData.point
+          locationPoint: +game.point
         }
       }})
     await ctx.telegram.sendMessage(userId, 'շնորհավորում եմ դուք հաղթահարել եք խաղը')
@@ -243,32 +234,3 @@ const gameTo = async (ctx) => {
   return false
 }
 module.exports = {showGameMenu, gameTo}
-
-// const {MenuTemplate, MenuMiddleware, createBackMainMenuButtons} = require('telegraf-inline-menu')
-// const locationGame = require('../location/locationGame.schema')
-// let a;
-// locationGame.find().then(e => {
-//   a = 20
-// })
-// const game = new MenuTemplate(() => 'Main Menu test')
-// for (let i = 1; i < a; i++) {
-//   const game = new MenuTemplate('game descriptors full ' + i)
-//   game.interact('play game', 'game unic name', {
-//     do: ctx => {
-//       ctx.deleteMessage()
-//       ctx.reply('Now you playing game ' + i)
-//       return true
-//     }
-//   })
-//   game.manualRow(createBackMainMenuButtons('back', 'go to Main game'))
-//   game.submenu('Game name ' + i, 'gameCode' + i, game, {
-//     // hide: () => mainMenuToggle,
-//   })
-//
-// }
-//
-// const menuMiddleware = new MenuMiddleware('game/', game)
-//
-// console.log(menuMiddleware.tree())
-//
-// module.exports = menuMiddleware

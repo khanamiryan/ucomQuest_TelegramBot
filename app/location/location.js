@@ -1,5 +1,4 @@
 const express = require('express');
-const LocationGames = require('./locationGame.schema')
 const Location = require('./location.schema')
 const router = express.Router()
 
@@ -56,41 +55,41 @@ router.delete('/:id', async (req, res) => {
   res.json(true)
 })
 
-router.post('/addGameToLocation', async (req, res) => {
-  await LocationGames.remove({
-    locationId: req.body._id
-  })
-  for(const game of  req.body.games) {
-    const locationGame = new LocationGames({
-      locationId: req.body._id,
-      gameId: game.gameId,
-      location: game.location,
-    })
-    await locationGame.save()
-  }
-
-  res.json(true)
-})
+// router.post('/addGameToLocation', async (req, res) => {
+//   await LocationGames.remove({
+//     locationId: req.body._id
+//   })
+//   for(const game of  req.body.games) {
+//     const locationGame = new LocationGames({
+//       locationId: req.body._id,
+//       gameId: game.gameId,
+//       location: game.location,
+//     })
+//     await locationGame.save()
+//   }
+//
+//   res.json(true)
+// })
 
 const getLocationGameData = (_id) => {
-  return LocationGames.aggregate([
-    {
-      $match: {_id}
-    },
-    {
-      $lookup:
-        {
-          from: "games",
-          localField: "gameId",
-          foreignField: "_id",
-          as: "game"
-        }
-    },
-    {
-      $addFields: {gameData: { $arrayElemAt: [ "$game", 0 ] }}
-    },
-    {$project: {game: 0}},
-  ])
+  // return LocationGames.aggregate([
+  //   {
+  //     $match: {_id}
+  //   },
+  //   {
+  //     $lookup:
+  //       {
+  //         from: "games",
+  //         localField: "gameId",
+  //         foreignField: "_id",
+  //         as: "game"
+  //       }
+  //   },
+  //   {
+  //     $addFields: {gameData: { $arrayElemAt: [ "$game", 0 ] }}
+  //   },
+  //   {$project: {game: 0}},
+  // ])
 }
 const getLocationDataById = (id) => {
   return Location.findById(id)

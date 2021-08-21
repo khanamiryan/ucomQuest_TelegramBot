@@ -87,21 +87,8 @@ const getUserInfo = async (code) => {
     {
       $lookup:
         {
-          from: "locationgames",
-          localField: "playingGameId",
-          foreignField: "_id",
-          as: "playingGame"
-        }
-    },
-    {
-      $addFields: {playingGameData: { $arrayElemAt: [ "$playingGame", 0 ] }}
-    },
-    {$project: {playingGame: 0}},
-    {
-      $lookup:
-        {
           from: "games",
-          localField: "playingGameData.gameId",
+          localField: "playingGameId",
           foreignField: "_id",
           as: "game"
         }

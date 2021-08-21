@@ -3,7 +3,6 @@ const bot = new Telegraf(process.env.botToken, {
   polling: true,
 });
 const {showGameMenu, gameTo} = require('./game')
-const buttonsTemplate = require('./buttonsTemplate')
 const interceptor = require('./interceptor')
 const admin = require('./admin')
 const {updateUser} = require("../user/user");
@@ -39,14 +38,9 @@ bot.on('location', async (ctx) => {
 })
 
 
-// bot.use(GameMenu.middleware())
-bot.use(buttonsTemplate.middleware())
 bot.use(admin.middleware())
 
-bot.command('templates', async ctx => buttonsTemplate.replyToContext(ctx))
 bot.command('admin', async ctx => adminPage(ctx))
-// bot.command('game', async ctx => GameMenu.replyToContext(ctx))
-
 bot.command('game', async ctx => showGameMenu(ctx.state.userId)) // open Games Menu
 bot.command('start', async ctx => showGameMenu(ctx.state.userId)) // open Games Menu
 bot.action(/^gTo/, async (ctx) => gameTo(ctx)) // gameTo
@@ -75,59 +69,6 @@ const adminPage = async (ctx) => {
     return false
   }
 }
-
-//
-// const menuTemplate = new MenuTemplate<MyContext>(ctx => `Hey ${ctx.from.teamName}!`)
-//
-// menuTemplate.interact('I am excited!', 'a', {
-//   do: async ctx => {
-//     await ctx.reply('As am I!')
-//     return false
-//   }
-// })
-//
-// bot.on('sticker', (ctx) => ctx.reply('👍'))
-// const inlineMessageRatingKeyboard = JSON.stringify({ inline_keyboard: [
-//     [
-//       { text: 'button 1', callback_data: 'like' },
-//     ],
-//     [
-//       { text: 'button 2', callback_data: 'like' },
-//       { text: 'button 2', callback_data: 'like' },
-//       { text: 'button 2', callback_data: 'like' },
-//     ],
-//     [
-//       { text: 'button 3', callback_data: 'like' },
-//       { text: 'button 3', callback_data: 'like' },
-//       { text: 'button 3', callback_data: 'like' },
-//       { text: 'button 3', callback_data: 'aaa' },
-//     ],
-//   ],
-//   resize_keyboard: true,
-//   one_time_keyboard: true,
-//   force_reply: true,
-// });
-// bot.command('start', async (ctx) => {
-//   ctx.reply('buttons', { reply_markup: inlineMessageRatingKeyboard })
-// })
-//
-// bot.action('like', (ctx) => ctx.editMessageReplyMarkup(inlineMessageRatingKeyboard))
-// bot.action('aaa', (ctx) => ctx.reply('buttons', { reply_markup: inlineMessageRatingKeyboard }))
-//
-//
-//
-// // bot.on('text', (ctx) => {
-// //   return ctx.reply(`Hello ${ctx.state.role}`)
-// // })
-// // bot.telegram.sendMessage(ctx.chat.id, 'hello there! Welcome to my new telegram bot.', {
-// // })
-//
-// bot.on('photo', (ctx) => {
-//   // bot.telegram.sendPhoto(ctx.chat.id, 'https://www.kindpng.com/picc/m/12-122875_transparent-younglife-logo-png-young-life-logo-yl.png')
-//   ctx.replyWithPhoto('https://www.kindpng.com/picc/m/12-122875_transparent-younglife-logo-png-young-life-logo-yl.png')
-// })
-//
-//
 
 bot.use(async (ctx, next) => {
   if (ctx.callbackQuery && 'data' in ctx.callbackQuery) {

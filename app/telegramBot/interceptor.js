@@ -1,5 +1,5 @@
 const Users = require("../user/user.schema");
-const {getUserInfo, getUserById, updateUser, getUserByVerificationCode} = require("../user/user");
+const {getUserById, updateUser, getUserByVerificationCode, getUserInfo} = require("../user/user");
 const {showGameMenu} = require("./game");
 
 const myCommands = {
@@ -29,7 +29,7 @@ const interceptor = async (ctx, next) => {
   ctx.state.role = user.role;
   ctx.state.chatTo = user.chatTo || '';
   ctx.state.playingLocationId = user.playingLocationId || '';
-  ctx.state.playingGameId = user.playingGameId || '';
+  ctx.state.playingGameId = user.playingGameId || undefined;
   ctx.state.userId = user.id || '';
   ctx.state.userData_Id = user._id || '';
   ctx.state.teamName = user.teamName || '';
