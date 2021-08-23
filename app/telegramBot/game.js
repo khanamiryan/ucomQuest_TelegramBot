@@ -83,7 +83,6 @@ const showGameMenu = async (userId) => {
     await bot.telegram.sendMessage(userId, 'you are finishGames')
   } else if(user.playStatus === 'goingLocation') {
     const location = await getLocationDataById(user.playingLocationId)
-    // TODO: location start description
     await bot.telegram.sendMessage(userId, location.startDescription)
   } else if (user.playingGameId) {
     await bot.telegram.sendMessage(userId, 'Now you playing a game')
@@ -109,12 +108,12 @@ const showGameMenu = async (userId) => {
           gameType,
         }
       },
-      // TODO: maxPlayerCount must lt nowPlaying
-      // {
-      //   $match: {
-      //     maxPlayerCount: { $gt: 0 },
-      //   }
-      // },
+      {
+        $match:
+          {
+            $expr: {$gt: ["$maxPlayerCount", "$nowPlaying"]}
+          }
+      }
     ])
     const gameButtons = [];
     for (const game of games) {
