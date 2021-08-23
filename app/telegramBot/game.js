@@ -47,7 +47,15 @@ const showGame = async ({ctx, text}) => {
     [{ text: `play Game`, callback_data: `gTo:pG/lGId=${locationGameId}`}, // pG = playGame, gTo = gameTo, lGId = locationGameId,
       { text: `🔙 back ↩`, callback_data: `gTo:gM/lGId=${locationGameId}`}] // gM = gameMenu, gTo = gameTo
   ];
-  ctx.reply(gameData.description, { reply_markup: JSON.stringify({ inline_keyboard: gameButtons})}).then(async (e) => {
+  await ctx.reply(`<b>${gameData.name}</b>: <i>${gameData.point}</i>`, {
+    parse_mode: 'HTML'
+  }).then(async (e) => {
+    await newMessage({
+      messageId: e.message_id,
+      userId: ctx.state.userId,
+    })
+  })
+  await ctx.reply(gameData.description, { reply_markup: JSON.stringify({ inline_keyboard: gameButtons})}).then(async (e) => {
     await newMessage({
       messageId: e.message_id,
       userId: ctx.state.userId,
@@ -127,7 +135,7 @@ const showGameMenu = async (userId) => {
     const gameButtons = [];
     for (const game of games) {
       gameButtons.unshift([
-        {text: `${game.name}`, callback_data: `gTo:gId/lG=${game._id}`}, // gId = gameId
+        {text: `${game.name}: ${game.point}`, callback_data: `gTo:gId/lG=${game._id}`}, // gId = gameId
       ])
     }
     if (gameType === 'levelUp') {
@@ -239,6 +247,20 @@ const reject = async ({ctx, text}) => {
   const [,userId] = user.split('=')
   await ctx.telegram.sendMessage(userId, 'Փորձեք կրկին')
 }
+
+const showPoints = async (ctx) => {
+  const {user} = await ctx.state
+  await ctx.reply(
+    `<b>${user.teamName}</b>
+<b>Location Point</b>: <i>${user.locationPoint}</i>
+<b>All Point</b>: <i>${user.allPoint}</i>
+`,
+    {
+      parse_mode: 'HTML'
+    }
+  )
+}
+
 const gameTo = async (ctx) => {
   const [, text] = ctx.update.callback_query.data.split(':')
   const [command] = text.split('/')
@@ -260,4 +282,8 @@ const gameTo = async (ctx) => {
   }
   return false
 }
-module.exports = {showGameMenu, gameTo}
+module.exports = {
+  showGameMenu,
+  gameTo,
+  showPoints
+}

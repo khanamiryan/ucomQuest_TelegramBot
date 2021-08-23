@@ -3,7 +3,7 @@ const schedule = require('node-schedule')
 const bot = new Telegraf(process.env.botToken, {
   polling: true,
 });
-const {showGameMenu, gameTo} = require('./game')
+const {showGameMenu, gameTo, showPoints} = require('./game')
 const interceptor = require('./interceptor')
 const {menuMiddleware: admin, adminPage} = require('./admin')
 const {onText, onPhoto, onVideo, actionTextTo, onContact, onLocation} = require("./playerOnData");
@@ -26,6 +26,7 @@ bot.use(admin.middleware())
 bot.command('admin', async ctx => adminPage(ctx))
 bot.command('game', async ctx => showGameMenu(ctx.state.userId)) // open Games Menu
 bot.command('start', async ctx => showGameMenu(ctx.state.userId)) // open Games Menu
+bot.command('points', async ctx => showPoints(ctx)) // open Games Menu
 bot.action(/^gTo/, async (ctx) => gameTo(ctx)) // gameTo
 
 bot.on('text', async (ctx) => onText(ctx))
