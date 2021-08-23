@@ -100,6 +100,14 @@ const getUserInfo = async (code) => {
   ])
 }
 
+const getOnlyPLayers = () => {
+  return Users.find({role: 'player'})
+}
+
+const userAggregate = (aggregate) => {
+  return Users.aggregate([...aggregate])
+}
+
 const getUserById = async (id) => {
   return Users.findOne({id});
 }
@@ -116,6 +124,8 @@ const getUserByVerificationCode = async (verificationCode) => {
 
 module.exports = {
   router,
+  userAggregate,
+  getOnlyPLayers,
   getUserByVerificationCode,
   getUserInfo,
   getUserById,

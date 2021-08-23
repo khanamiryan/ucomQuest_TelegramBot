@@ -1,11 +1,12 @@
-const Game = require('../game/game.schema')
-const Users = require('../user/user.schema')
-const Messages = require('../messages/messages.schema')
-const {updateUser, getUserById} = require("../user/user");
+const Game = require('../api/game/game.schema')
+const Users = require('../api/user/user.schema')
+const Messages = require('../api/messages/messages.schema')
+const {updateUser, getUserById} = require("../api/user/user");
 const {Telegraf} = require('telegraf');
-const {getLocationDataById} = require("../location/location");
-const {getGameById, updateGame} = require("../game/game");
-const {newMessage} = require("../messages/messages");
+const {getLocationDataById} = require("../api/location/location");
+const {getGameById, updateGame} = require("../api/game/game");
+const {newMessage} = require("../api/messages/messages");
+const moment = require('moment');
 const bot = new Telegraf(process.env.botToken, {
   polling: true,
 });
@@ -67,7 +68,11 @@ const playGame = async ({ctx, text}) => {
         nowPlaying: +1
       }
     })
-  await Users.updateOne({id: ctx.state.userId}, {playingGameId: gameData._id, $push: { "playedGames" : gameData.gameCode } })
+  await Users.updateOne({id: ctx.state.userId}, {
+    playingGameId: gameData._id,
+    $push: { "playedGames" : gameData.gameCode },
+    playingGameTime: moment().add(gameData.gamePlayTime, 'minutes')
+  })
   ctx.reply(
     `<b>Now you are playing <i>${gameData.name}</i></b>
 ${gameData.fullDescription}`, {
@@ -79,6 +84,10 @@ ${gameData.fullDescription}`, {
 const showGameMenu = async (userId) => {
   const user = await getUserById(userId)
   await deleteMessagesFunction(userId)
+  if (user.role === 'admin') {
+    await bot.telegram.sendMessage(userId, 'you are Admin')
+    return false
+  }
   if (user.playStatus === 'finishGames') {
     await bot.telegram.sendMessage(userId, 'you are finishGames')
   } else if(user.playStatus === 'goingLocation') {
@@ -161,9 +170,10 @@ const approveGame = async ({ctx, text}) => {
       })
     await updateUser({id: userId, data: {
         playingGameId: undefined,
+        $unset: { playingGameTime: ""},
         $inc: {
           locationPoint: +game.point
-        }
+        },
       }})
     await ctx.telegram.sendMessage(userId, 'շնորհավորում եմ դուք հաղթահարել եք խաղը')
   } else if (userData.playStatus === 'playingLevelUp') {
@@ -179,6 +189,7 @@ const approveGame = async ({ctx, text}) => {
           locationPoint: 0,
           playStatus: 'goingLocation',
           playingGameId: undefined,
+          $unset: { playingLocationTime: ""},
         }
       })
       await ctx.telegram.sendMessage(userId, 'You are finishGames')
@@ -207,8 +218,10 @@ const approveLocation = async ({ctx, text}) => {
   })
   const [,user] = text.split('/')
   const [,userId] = user.split('=')
+  const locationData = await getLocationDataById(user.playingLocationId)
   await updateUser({id: userId, data: {
-      playStatus: 'playingGame'
+      playStatus: 'playingGame',
+      playingLocationTime: moment().add(locationData.finishTime, 'minutes')
     }})
   await ctx.telegram.sendMessage(userId, 'դուք հասաք նշված վայր')
   await showGameMenu(userId)

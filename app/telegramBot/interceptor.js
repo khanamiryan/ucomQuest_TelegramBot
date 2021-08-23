@@ -1,5 +1,5 @@
-const Users = require("../user/user.schema");
-const {getUserById, updateUser, getUserByVerificationCode, getUserInfo} = require("../user/user");
+const Users = require("../api/user/user.schema");
+const {getUserById, updateUser, getUserByVerificationCode, getUserInfo} = require("../api/user/user");
 const {showGameMenu} = require("./game");
 
 const myCommands = {

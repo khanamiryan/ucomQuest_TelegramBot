@@ -1,5 +1,5 @@
 const {MenuTemplate, MenuMiddleware, createBackMainMenuButtons} = require('telegraf-inline-menu')
-const Users = require('../user/user.schema')
+const Users = require('../api/user/user.schema')
 
 const findUsers = async (condition ={}) => {
   return Users.find({...condition,role: 'player', id: { $exists: true }})
@@ -24,10 +24,18 @@ menu.interact(`User List`, 'userList', {
     return false
   }
 });
-
+const adminPage = async (ctx) => {
+  if (ctx.state.role === 'admin') {
+    ctx.deleteMessage()
+    await menuMiddleware.replyToContext(ctx)
+    return false
+  }
+}
 menu.manualRow(createBackMainMenuButtons())
 const menuMiddleware = new MenuMiddleware('admin/', menu)
 
 console.log(menuMiddleware.tree())
 
-module.exports = menuMiddleware
+module.exports = {
+  menuMiddleware,
+  adminPage}

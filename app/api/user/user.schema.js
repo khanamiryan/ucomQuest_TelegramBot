@@ -40,6 +40,12 @@ const userSchema = mongoose.Schema({
   playingGameId: {
     type: mongoose.Schema.Types.ObjectId,
   },
+  playingGameTime: {
+    type: Date,
+  },
+  playingLocationTime: {
+    type: Date,
+  },
   playedGames: {
     type: [String],
   },

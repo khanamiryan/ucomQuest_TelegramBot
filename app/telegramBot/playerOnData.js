@@ -1,7 +1,7 @@
-const {getUserByCode} = require("../user/user");
-const {getLocationDataById} = require("../location/location");
-const {saveFile} = require("../file/file");
-const {getGameById} = require("../game/game");
+const {getUserByCode, updateUser} = require("../api/user/user");
+const {getLocationDataById} = require("../api/location/location");
+const {saveFile} = require("../api/file/file");
+const {getGameById} = require("../api/game/game");
 const onText = async (ctx) => {
   const [code, text] = ctx.message?.text.split(':')
   const user = code ? await getUserByCode(code) : null;
@@ -93,7 +93,39 @@ const onVideo = async (ctx) => {
     await ctx.telegram.sendVideo(ctx.state.chatTo, ctx.message.video.file_id)
   }
 }
+const actionTextTo = async (ctx) => {
+  const [,userId, userCode] = ctx.update.callback_query.data.split(':')
+  await updateUser({
+    id: ctx.from.id,
+    data: {
+      chatTo: userId
+    }
+  })
+  ctx.editMessageText(`now we chatting with ${userCode}`)
+}
+const onContact = async (ctx) => {
+  await updateUser({
+    id: ctx.update.message.contact.user_id,
+    data: {
+      phone_number: +ctx.update.message.contact.phone_number,
+    }
+  })
+  ctx.reply(`thank you our admins will contact you, by that number\n${ctx.update.message.contact.phone_number}`)
+}
+const onLocation = async (ctx) => {
+  console.log(123, ctx);
+  // await updateUser({
+  //   id: ctx.update.message.contact.user_id,
+  //   data: {
+  //     phone_number: +ctx.update.message.contact.phone_number,
+  //   }
+  // })
+  ctx.reply(`thank you`)
+}
 module.exports = {
+  onLocation,
+  onContact,
+  actionTextTo,
   onText,
   onPhoto,
   onVideo
