@@ -4,7 +4,9 @@ const {showGameMenu} = require("./game");
 
 const myCommands = {
   stop: 'chatting is stop',
-  player: 'playerInfo'
+  player: 'playerInfo',
+  point: 'added point to player',
+  cancelGame: 'player Games is canceled'
 }
 
 
@@ -44,9 +46,34 @@ const interceptor = async (ctx, next) => {
     return false
   }
 
-  const [code, text] = ctx?.message?.text ? ctx?.message?.text.split(':') : []
-  if (ctx.state.role === 'admin' && myCommands[code]) {
-    switch (code) {
+  const [code, text, point] = ctx?.message?.text ? ctx?.message?.text.split(':') : []
+  if (ctx.state.role === 'admin' && myCommands[code.trim()]) {
+    const [player] = await getUserInfo(text.trim())
+    switch (code.trim()) {
+      case 'cancelGame':
+        await updateUser({id: player.id, data: {
+            playingGameId: undefined,
+            $unset: { playingGameTime: ""},
+          }})
+        await ctx.reply(
+          `<b>Game canceled</b>
+<b>Team Name</b>: <i>${player.teamName}</i>`
+          , {parse_mode: 'HTML'})
+        await showGameMenu(player.id)
+        break
+      case 'point':
+        await updateUser({id: player.id, data: {
+            $inc: {
+              locationPoint: point
+            },
+          }})
+        await ctx.reply(
+          `<b>Point added</b>
+<b>Team Name</b>: <i>${player.teamName}</i>
+<b>Point</b>: <i>${point}</i>`
+          , {parse_mode: 'HTML'})
+        await showGameMenu(player.id)
+        break
       case 'stop':
         await updateUser({id: user.id, data: {
             chatTo: null
@@ -54,7 +81,6 @@ const interceptor = async (ctx, next) => {
         await ctx.reply('Chatting is stop')
         break
       case 'player':
-        const [player] = await getUserInfo(text.trim())
         if (player.length) {
           await ctx.reply(`
 <b>code</b>: <i>${player.code}</i>

@@ -42,11 +42,9 @@ const scheduleFunction = async (bot) => {
       }
     }
   ])
-  console.log(555);
   if (playersLocationTime.length) {
     for(const playersLocation of playersLocationTime) {
-      console.log(123, moment().diff(playersLocation.playingLocationTime, 'minutes'));
-      // console.log(moment().diff(moment(playersLocation.playingLocationTime), 'minutes'));
+      // console.log(123, moment().diff(playersLocation.playingLocationTime, 'minutes'));
       const locationData = await getLocationDataById(playersLocation.playingLocationId)
       const [player] = await getUserInfo(playersLocation.code)
       await bot.telegram.sendMessage(player.chatTo,
