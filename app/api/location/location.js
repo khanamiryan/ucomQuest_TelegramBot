@@ -3,47 +3,17 @@ const Location = require('./location.schema')
 const router = express.Router()
 
 getLocation = async () => {
-  let locations = await Location.aggregate([
-    {
-      $lookup:
-        {
-          from: "locationgames",
-          localField: "_id",
-          foreignField: "locationId",
-          as: "games"
-        }
-    },
-    {
-      $lookup:
-        {
-          from: "games",
-          localField: "games.gameId",
-          foreignField: "_id",
-          as: "locationGames"
-        }
-    },
-  ])
-  locations = locations.map(location => {
-    location.locationGames = location.locationGames.map(( locGames) => {
-      let gameLocations = '';
-      location.games.map((game) => {
-        if (game.gameId.toString() === locGames._id.toString()) {
-          gameLocations = game.location
-        }
-      })
-      return {
-        ...locGames,
-        location: gameLocations
-      }
-    })
-    return location
-  })
-  return locations
+  return Location.find();
 }
 
 router.post('/', async (req, res) => {
+  delete req.body._id;
   const newLocation = new Location(req.body);
   const location = await newLocation.save()
+  res.json(location)
+})
+router.put('/', async (req, res) => {
+  const location = await Location.updateOne({_id: req.body._id}, req.body);
   res.json(location)
 })
 router.get('/', async (req, res) => {
