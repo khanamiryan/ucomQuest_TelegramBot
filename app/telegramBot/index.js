@@ -6,7 +6,7 @@ const bot = new Telegraf(process.env.botToken, {
 const {showGameMenu, gameTo, showPoints} = require('./game')
 const interceptor = require('./interceptor')
 const {menuMiddleware: admin, adminPage} = require('./admin')
-const {onText, onPhoto, onVideo, actionTextTo, onContact, onLocation} = require("./playerOnData");
+const {onText, onPhoto, onVideo, actionTextTo, onContact, onLocation, onFile, onlyForward} = require("./playerOnData");
 const {scheduleFunction} = require("./schedule");
 
 bot.use(async (ctx, next) => interceptor(ctx, next))
@@ -32,10 +32,11 @@ bot.action(/^gTo/, async (ctx) => gameTo(ctx)) // gameTo
 bot.on('text', async (ctx) => onText(ctx))
 bot.on('photo', async (ctx) => onPhoto(ctx))
 bot.on('video', async (ctx) => onVideo(ctx))
+bot.on('document', (ctx) => onFile(ctx))
+bot.on('message', (ctx) => onlyForward(ctx))
 
 bot.action(/^textTo/, async (ctx) => actionTextTo(ctx))
 bot.action('back', async (ctx) => adminPage(ctx));
-
 bot.use(async (ctx, next) => {
   if (ctx.callbackQuery && 'data' in ctx.callbackQuery) {
     console.log('another callbackQuery happened', ctx.callbackQuery.data.length, ctx.callbackQuery.data)

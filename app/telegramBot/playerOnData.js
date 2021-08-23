@@ -11,14 +11,46 @@ const onText = async (ctx) => {
     })
   } else if (ctx.state?.chatTo && ctx.message.text) {
     if (ctx.state.role === 'player') {
-      await ctx.telegram.sendMessage(ctx.state.chatTo, `<b>${ctx.state.user.code}</b>:  <i>${ctx.message.text}</i>`, {
+      ctx.state.chatTo && await ctx.telegram.sendMessage(ctx.state.chatTo, `<b>${ctx.state.user.code}</b>:  <i>${ctx.message.text}</i>`, {
         parse_mode: 'html'
       })
     } else {
-      await ctx.telegram.sendMessage(ctx.state.chatTo, `<b>${ctx.message.text}</b>`, {
+      ctx.state.chatTo && await ctx.telegram.sendMessage(ctx.state.chatTo, `<b>${ctx.message.text}</b>`, {
         parse_mode: 'html'
       })
     }
+  }
+}
+const onFile = async (ctx) => {
+  const file = await ctx.telegram.getFileLink(ctx.message.document.file_id)
+  const game = await getGameById(ctx.state.playingGameId)
+  await saveFile({
+    fileId: ctx.message.document.file_id,
+    userId: ctx.state.user.id,
+    userTeamName: ctx.state.user.teamName,
+    userCode: ctx.state.user.code,
+    fileHref: file.href,
+    fileType: 'file',
+    gameName: game?.name,
+    gameLocation: game?.location,
+  })
+  if (ctx.state?.chatTo && ctx.state?.role === 'player') {
+    await ctx.telegram.sendMessage(ctx.state.chatTo, `
+<b>plyerCode</b>: <b>${ctx.state.user.code}</b>
+<b>playerTeamName</b>: ${ctx.state.user.teamName}
+<i>send you a File</i>`, {
+      parse_mode: 'html'
+    })
+    await ctx.telegram.forwardMessage(ctx.state.chatTo, ctx.state.user.id, ctx.message.message_id)
+    if (game?._id) {
+      const gameButtons = [
+        [{ text: `✅ approve`, callback_data: `gTo:appG/uId=${ctx.state.userId}`}, // app = approve, gTo = gameTo, uId = userId,
+          { text: `❌ reject`, callback_data: `gTo:rejG/uId=${ctx.state.userId}`}] // rej = reject, gTo = gameTo, uId = userId,
+      ];
+      await ctx.telegram.sendMessage(ctx.state.chatTo, `GameName: ${game.name}`, {reply_markup: JSON.stringify({inline_keyboard: gameButtons})})
+    }
+  } else {
+    ctx.state.chatTo && await ctx.telegram.forwardMessage(ctx.state.chatTo, ctx.state.user.id, ctx.message.message_id)
   }
 }
 const onPhoto = async (ctx) => {
@@ -55,10 +87,9 @@ const onPhoto = async (ctx) => {
           { text: `❌ reject`, callback_data: `gTo:rejL/uId=${ctx.state.userId}`}] // rejL = reject Location, uId = userId,
       ];
       await ctx.telegram.sendMessage(ctx.state.chatTo, `Going To: ${userLocation.name}`, {reply_markup: JSON.stringify({inline_keyboard: gameButtons})})
-
     }
   } else {
-    await ctx.telegram.sendPhoto(ctx.state.chatTo, ctx.message.photo.pop().file_id)
+    ctx.state.chatTo && await ctx.telegram.sendPhoto(ctx.state.chatTo, ctx.message.photo.pop().file_id)
   }
 }
 const onVideo = async (ctx) => {
@@ -82,7 +113,7 @@ const onVideo = async (ctx) => {
       parse_mode: 'html'
     })
     await ctx.telegram.sendVideo(ctx.state.chatTo, ctx.message.video.file_id)
-    if (game.length) {
+    if (game?._id) {
       const gameButtons = [
         [{ text: `✅ approve`, callback_data: `gTo:appG/uId=${ctx.state.userId}`}, // app = approve, gTo = gameTo, uId = userId,
           { text: `❌ reject`, callback_data: `gTo:rejG/uId=${ctx.state.userId}`}] // rej = reject, gTo = gameTo, uId = userId,
@@ -90,7 +121,7 @@ const onVideo = async (ctx) => {
       await ctx.telegram.sendMessage(ctx.state.chatTo, `GameName: ${game.name}`, {reply_markup: JSON.stringify({inline_keyboard: gameButtons})})
     }
   } else {
-    await ctx.telegram.sendVideo(ctx.state.chatTo, ctx.message.video.file_id)
+    ctx.state.chatTo && await ctx.telegram.sendVideo(ctx.state.chatTo, ctx.message.video.file_id)
   }
 }
 const actionTextTo = async (ctx) => {
@@ -122,11 +153,28 @@ const onLocation = async (ctx) => {
   // })
   ctx.reply(`thank you`)
 }
+const onlyForward = async (ctx) => {
+  const data = ctx.message?.audio?.file_id && await ctx.telegram.getFileLink(ctx.message.audio.file_id)
+  const game = await getGameById(ctx.state.playingGameId)
+  await saveFile({
+    fileId: ctx.message?.audio?.file_id,
+    userId: ctx.state.user.id,
+    userTeamName: ctx.state.user.teamName,
+    userCode: ctx.state.user.code,
+    fileHref: data.href,
+    fileType: 'data',
+    gameName: game?.name,
+    gameLocation: game?.location,
+  })
+  ctx.state.chatTo && await ctx.telegram.forwardMessage(ctx.state.chatTo, ctx.state.user.id, ctx.message.message_id)
+}
 module.exports = {
   onLocation,
   onContact,
   actionTextTo,
   onText,
   onPhoto,
-  onVideo
+  onFile,
+  onVideo,
+  onlyForward
 }

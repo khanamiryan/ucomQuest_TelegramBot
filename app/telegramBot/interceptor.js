@@ -47,7 +47,7 @@ const interceptor = async (ctx, next) => {
   }
 
   const [code, text, point] = ctx?.message?.text ? ctx?.message?.text.split(':') : []
-  if (ctx.state.role === 'admin' && myCommands[code.trim()]) {
+  if (code && ctx.state.role === 'admin' && myCommands[code.trim()]) {
     const [player] = await getUserInfo(text.trim())
     switch (code.trim()) {
       case 'cancelGame':
@@ -81,11 +81,12 @@ const interceptor = async (ctx, next) => {
         await ctx.reply('Chatting is stop')
         break
       case 'player':
-        if (player.length) {
+        if (player?._id) {
           await ctx.reply(`
 <b>code</b>: <i>${player.code}</i>
 <b>Team Name</b>: <i>${player.teamName}</i>
 <b>Team location ponit</b>: <i>${player.locationPoint}</i>
+<b>Team all ponit</b>: <i>${player.allPoint}</i>
 <b>location</b>: <i>${player.locationData?.name || "doesn't exist"}</i>
 <b>game</b>: <i>${player.gameData?.name || "doesn't exist"}</i>
 <b>gameLocation</b>: <i>${player.playingGameData?.location || "doesn't exist"}</i>
