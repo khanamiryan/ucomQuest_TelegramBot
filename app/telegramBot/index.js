@@ -7,7 +7,7 @@ const {showGameMenu, gameTo} = require('./game')
 const interceptor = require('./interceptor')
 const {menuMiddleware: admin, adminPage} = require('./admin')
 const {onText, onPhoto, onVideo, actionTextTo, onContact, onLocation} = require("./playerOnData");
-const {scheduleFunction} = require("./schedule ");
+const {scheduleFunction} = require("./schedule");
 
 bot.use(async (ctx, next) => interceptor(ctx, next))
 
@@ -43,7 +43,7 @@ bot.use(async (ctx, next) => {
 })
 
 
-schedule.scheduleJob('*/10 * * * * *', () => {
+schedule.scheduleJob('* * * * *', () => {
   scheduleFunction(bot)
 })
 

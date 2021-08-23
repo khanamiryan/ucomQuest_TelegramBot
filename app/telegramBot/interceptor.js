@@ -54,19 +54,20 @@ const interceptor = async (ctx, next) => {
         await ctx.reply('Chatting is stop')
         break
       case 'player':
-        const player = await getUserInfo(text.trim())
+        const [player] = await getUserInfo(text.trim())
         if (player.length) {
           await ctx.reply(`
-<b>code</b>: <i>${player[0].code}</i>
-<b>Team Name</b>: <i>${player[0].teamName}</i>
-<b>location</b>: <i>${player[0].locationData?.name || "doesn't exist"}</i>
-<b>game</b>: <i>${player[0].gameData?.name || "doesn't exist"}</i>
-<b>gameLocation</b>: <i>${player[0].playingGameData?.location || "doesn't exist"}</i>
+<b>code</b>: <i>${player.code}</i>
+<b>Team Name</b>: <i>${player.teamName}</i>
+<b>Team location ponit</b>: <i>${player.locationPoint}</i>
+<b>location</b>: <i>${player.locationData?.name || "doesn't exist"}</i>
+<b>game</b>: <i>${player.gameData?.name || "doesn't exist"}</i>
+<b>gameLocation</b>: <i>${player.playingGameData?.location || "doesn't exist"}</i>
           `, {
             parse_mode: 'html'
           })
-          if(player[0].playingGameData?.location) {
-            await ctx.replyWithLocation(...player[0].playingGameData?.location.split(', '))
+          if(player.playingGameData?.location) {
+            await ctx.replyWithLocation(...player.playingGameData?.location.split(', '))
           }
         } else {
           await ctx.reply(`this "<b>${text.trim()}</b>" player not found`, {parse_mode: 'HTML'})

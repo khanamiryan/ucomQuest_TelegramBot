@@ -218,7 +218,9 @@ const approveLocation = async ({ctx, text}) => {
   })
   const [,user] = text.split('/')
   const [,userId] = user.split('=')
-  const locationData = await getLocationDataById(user.playingLocationId)
+  const userData = await getUserById(userId)
+  const locationData = await getLocationDataById(userData.playingLocationId)
+  console.log('locationData.finishTime', locationData);
   await updateUser({id: userId, data: {
       playStatus: 'playingGame',
       playingLocationTime: moment().add(locationData.finishTime, 'minutes')
