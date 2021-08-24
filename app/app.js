@@ -6,6 +6,7 @@ const bot = require('./telegramBot/index')
 
 
 const mongoose = require('mongoose');
+console.log(process.env.mongodb);
 mongoose.connect(process.env.mongodb, { useNewUrlParser: true, useUnifiedTopology: true  })
 const db = mongoose.connection;
 
