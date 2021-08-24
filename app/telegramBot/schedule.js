@@ -54,9 +54,9 @@ Time will end in 5 minutes
 <b>code</b>: <i>${player.code}</i>
 <b>Team Name</b>: <i>${player.teamName}</i>
 <b>Team location ponit</b>: <i>${player.locationPoint}</i>
-<b>location</b>: <i>${player.locationData.name || "doesn't exist"}</i>
-<b>game</b>: <i>${player.gameData.name || "doesn't exist"}</i>
-<b>gameLocation</b>: <i>${player.playingGameData.location || "doesn't exist"}</i>`,
+<b>location</b>: <i>${player.locationData?.name || "doesn't exist"}</i>
+<b>game</b>: <i>${player.gameData?.name || "doesn't exist"}</i>
+<b>gameLocation</b>: <i>${player.playingGameData?.location || "doesn't exist"}</i>`,
         {parse_mode: 'HTML'})
     }
   }
@@ -71,9 +71,9 @@ Time will end in 5 minutes
 <b>code</b>: <i>${player.code}</i>
 <b>Team Name</b>: <i>${player.teamName}</i>
 <b>Team location ponit</b>: <i>${player.locationPoint}</i>
-<b>location</b>: <i>${player.locationData.name || "doesn't exist"}</i>
-<b>game</b>: <i>${player.gameData.name || "doesn't exist"}</i>
-<b>gameLocation</b>: <i>${player.playingGameData.location || "doesn't exist"}</i>`,
+<b>location</b>: <i>${player.locationData?.name || "doesn't exist"}</i>
+<b>game</b>: <i>${player.gameData?.name || "doesn't exist"}</i>
+<b>gameLocation</b>: <i>${player.playingGameData?.location || "doesn't exist"}</i>`,
         {parse_mode: 'HTML'})
     }
   }
