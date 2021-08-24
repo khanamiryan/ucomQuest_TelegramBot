@@ -15,9 +15,11 @@ router.use('/location', locationRouter)
 router.use('/game', gameRouter)
 router.use('/file', fileRouter)
 router.post('/login', (req, res) => {
-  if (req.body.name === process.env.userName && req.body.password === process.env.password) {
+  if (req.body.name === process.env.loginUserName && req.body.password === process.env.loginUserPassword) {
     res.send({token: btoa(process.env.token)
     })
+  } else {
+    res.status(400).send(`user not found ${req.body.name}, ${req.body.password}`)
   }
 })
 
