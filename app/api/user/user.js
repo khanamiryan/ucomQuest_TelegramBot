@@ -41,7 +41,7 @@ router.get('/admins', (req, res) => {
 })
 router.post('/', async (req, res) => {
   const user = await Users.findOne({ $or: [{code: req.body.code}, {verificationCode: req.body.verificationCode}]})
-  if (user?.code || user?.verificationCode) {
+  if (user.code || user.verificationCode) {
     res.json({error: 'use other code'})
   } else {
     const newUser = new Users({...req.body, ...req.body.admin});
@@ -54,7 +54,7 @@ router.post('/', async (req, res) => {
 })
 router.put('/', async (req, res) => {
   const user = await Users.findOne({ $or: [{code: req.body.code}, {verificationCode: req.body.verificationCode}]})
-  if ((user?.code || user?.verificationCode) && user._id.toString() !== req.body._id) {
+  if ((user.code || user.verificationCode) && user._id.toString() !== req.body._id) {
     res.json({error: 'use other code'})
   } else {
     const user = await Users.updateOne({_id: req.body._id}, req.body);
