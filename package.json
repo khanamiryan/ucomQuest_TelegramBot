@@ -2,7 +2,7 @@
   "name": "telegramBot",
   "version": "1.0.0",
   "scripts": {
-    "start": "node -r ems index.js",
+    "start": "node index.js",
     "start:dev": "nodemon index.js"
   },
   "dependencies": {
