@@ -13,3 +13,4 @@ $ npm install
 # starting
 $ npm start
 ```
+## Login `Name` and `password` in `.env` file
