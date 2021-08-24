@@ -1,13 +1,13 @@
 {
   "name": "telegramBot",
   "version": "1.0.0",
+  "type": "module",
   "scripts": {
-    "start": "node -r ems index.js",
+    "start": "node index.js",
     "start:dev": "nodemon index.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
-    "esm": "^3.2.25",
     "express": "^4.17.1",
     "moment": "^2.29.1",
     "mongodb": "^4.1.0",
