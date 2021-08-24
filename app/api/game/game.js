@@ -3,7 +3,7 @@ const Games = require('./game.schema')
 const router = express.Router()
 
 router.post('/', async (req, res) => {
-  delete req.body?._id
+  delete req.body && req.body._id
   const newGame = new Games(req.body);
   const game = await newGame.save()
   res.json(game)
