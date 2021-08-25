@@ -17,7 +17,6 @@ router.post('/',  upload.single('file'), async (req, res) => {
     body.fileName = req.file.filename
   }
   req.body && delete req.body._id
-  console.log(req.body.file);
   const newGame = new Games(req.body);
   const game = await newGame.save()
   res.json(game)

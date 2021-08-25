@@ -17,10 +17,9 @@ const saveFile = async (data) => {
   const newFile = new File(data);
   return await newFile.save()
 }
-const getFile = async (filename) => {
-  const filePath = `../../uploads/${filename}`
+const getFile = (filename) => {
+  const filePath = `../../../uploads/${filename}`
   const buff = fs.readFileSync(path.join(__dirname, filePath));
-  // await ctx.replyWithDocument({source:buff, filename })
   return buff
 }
 

@@ -46,7 +46,7 @@ const interceptor = async (ctx, next) => {
     return false
   }
 
-  const [code, text, point] = ctx.message.text ? ctx.message.text.split(':') : []
+  const [code, text, point] = ctx.message && ctx.message.text ? ctx.message.text.split(':') : []
   if (code && ctx.state.role === 'admin' && myCommands[code.trim()]) {
     const [player] = await getUserInfo(text.trim())
     switch (code.trim()) {

@@ -7,6 +7,7 @@ const {getLocationDataById} = require("../api/location/location");
 const {getGameById, updateGame} = require("../api/game/game");
 const {newMessage} = require("../api/messages/messages");
 const moment = require('moment');
+const {getFile} = require("../api/file/file");
 const bot = new Telegraf(process.env.botToken, {
   polling: true,
 });
@@ -81,11 +82,23 @@ const playGame = async ({ctx, text}) => {
     $push: { "playedGames" : gameData.gameCode },
     playingGameTime: moment().add(gameData.gamePlayTime, 'minutes')
   })
-  ctx.reply(
+  await ctx.reply(
     `<b>Now you are playing <i>${gameData.name}</i></b>
 ${gameData.fullDescription}`, {
       parse_mode: 'html'
     })
+  if (gameData.fileName) {
+    const message = await ctx.reply(
+      `<i>Uploading file ...</i>`, {
+        parse_mode: 'html'
+      })
+    const buffer =  getFile(gameData.fileName)
+    await ctx.replyWithDocument({source: buffer, filename: gameData.fileName }).then(async (e) => {
+      await bot.telegram.deleteMessage(ctx.state.user.id, message.message_id).then().catch((err) => {
+        console.log(2222, err);
+      })
+    })
+  }
 }
 
 // Game Menu
@@ -228,7 +241,6 @@ const approveLocation = async ({ctx, text}) => {
   const [,userId] = user.split('=')
   const userData = await getUserById(userId)
   const locationData = await getLocationDataById(userData.playingLocationId)
-  console.log('locationData.finishTime', locationData);
   await updateUser({id: userId, data: {
       playStatus: 'playingGame',
       playingLocationTime: moment().add(locationData.finishTime, 'minutes')
