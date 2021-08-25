@@ -14,15 +14,23 @@ const upload = multer({ dest: 'public/', storage: storageConfig })
 router.post('/',  upload.single('file'), async (req, res) => {
   let body = req.body;
   if (req.file && req.file.filename) {
+    console.log(req.file);
     body.fileName = req.file.filename
   }
-  req.body && delete req.body._id
-  const newGame = new Games(req.body);
+  body && delete body._id
+  const newGame = new Games(body);
   const game = await newGame.save()
   res.json(game)
 })
-router.put('/', async (req, res) => {
-  const game = await Games.updateOne({_id: req.body._id}, req.body);
+router.put('/', upload.single('file'), async (req, res) => {
+  let body = req.body;
+  if (req.file && req.file.filename) {
+    console.log(req.file);
+    body.fileName = req.file.filename
+  }
+  console.log(req.file);
+  console.log(body);
+  const game = await Games.updateOne({_id: body._id}, body);
   res.json(game)
 })
 router.get('/', async (req, res) => {
