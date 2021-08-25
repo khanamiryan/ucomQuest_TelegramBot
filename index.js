@@ -26,6 +26,7 @@ app.use((req, res, next) => {
     res.sendStatus(403);
   }
 });
+app.use(express.static('public'));
 app.use("/", appRoute)
 app.listen(process.env.port,  () => {
   console.log(`App is listening to port ${process.env.port}`);

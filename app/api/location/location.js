@@ -7,7 +7,7 @@ getLocation = async () => {
 }
 
 router.post('/', async (req, res) => {
-  delete req.body._id;
+  req.body && delete req.body._id;
   const newLocation = new Location(req.body);
   const location = await newLocation.save()
   res.json(location)

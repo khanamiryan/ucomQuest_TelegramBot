@@ -1,6 +1,8 @@
 const Users = require("../api/user/user.schema");
 const {getUserById, updateUser, getUserByVerificationCode, getUserInfo} = require("../api/user/user");
 const {showGameMenu} = require("./game");
+const fs = require("fs");
+const path = require("path");
 
 const myCommands = {
   stop: 'chatting is stop',
@@ -11,7 +13,6 @@ const myCommands = {
 
 
 const interceptor = async (ctx, next) => {
-
   let user = await getUserById(ctx.from.id)
   // verify user by verificationCode
   if(!user) {
@@ -36,7 +37,6 @@ const interceptor = async (ctx, next) => {
   ctx.state.userData_Id = user._id || '';
   ctx.state.teamName = user.teamName || '';
   ctx.state.user = user || {};
-
   // set team name if not exist
   if (!user.teamName) {
     await Users.updateOne({id: user.id}, {teamName: ctx.message.text})

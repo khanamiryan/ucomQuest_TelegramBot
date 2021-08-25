@@ -1,9 +1,23 @@
 const express = require('express');
 const Games = require('./game.schema')
 const router = express.Router()
-
-router.post('/', async (req, res) => {
-  delete req.body && req.body._id
+const multer  = require('multer')
+const storageConfig = multer.diskStorage({
+  destination: (req, file, cb) =>{
+    cb(null, "uploads");
+  },
+  filename: (req, file, cb) =>{
+    cb(null, file.originalname);
+  }
+});
+const upload = multer({ dest: 'public/', storage: storageConfig })
+router.post('/',  upload.single('file'), async (req, res) => {
+  let body = req.body;
+  if (req.file && req.file.filename) {
+    body.fileName = req.file.filename
+  }
+  req.body && delete req.body._id
+  console.log(req.body.file);
   const newGame = new Games(req.body);
   const game = await newGame.save()
   res.json(game)

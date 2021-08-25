@@ -5,6 +5,9 @@ const gameSchema = mongoose.Schema({
     type: String,
     required: true
   },
+  fileName: {
+    type: String
+  },
   gameCode: {
     type: String,
     required: true
