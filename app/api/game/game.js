@@ -28,8 +28,6 @@ router.put('/', upload.single('file'), async (req, res) => {
     console.log(req.file);
     body.fileName = req.file.filename
   }
-  console.log(req.file);
-  console.log(body);
   const game = await Games.updateOne({_id: body._id}, body);
   res.json(game)
 })
