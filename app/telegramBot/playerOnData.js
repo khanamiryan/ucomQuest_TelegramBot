@@ -25,6 +25,7 @@ const onFile = async (ctx) => {
   const file = await ctx.telegram.getFileLink(ctx.message.document.file_id)
   const game = await getGameById(ctx.state.playingGameId)
   await saveFile({
+    fileName: ctx.message.document.file_name,
     fileId: ctx.message.document.file_id,
     userId: ctx.state.user.id,
     userTeamName: ctx.state.user.teamName,
@@ -57,6 +58,7 @@ const onPhoto = async (ctx) => {
   const photo = await ctx.telegram.getFileLink(ctx.message.photo.pop().file_id)
   const game = await getGameById(ctx.state.playingGameId)
   await saveFile({
+    fileName: `${new Date().getTime()}.jpg`,
     fileId: ctx.message.photo.pop().file_id,
     userId: ctx.state.user.id,
     userTeamName: ctx.state.user.teamName,
@@ -96,14 +98,15 @@ const onVideo = async (ctx) => {
   const video = await ctx.telegram.getFileLink(ctx.message.video.file_id)
   const game = await getGameById(ctx.state.playingGameId)
   await saveFile({
+    fileName: `${new Date().getTime()}.${ctx.message.video.mime_type.split('/').pop()}`,
     fileId: ctx.message.video.file_id,
     userId: ctx.state.user.id,
     userTeamName: ctx.state.user.teamName,
     userCode: ctx.state.user.code,
     fileHref: video.href,
     fileType: 'video',
-    gameName: game.name,
-    gameLocation: game.location,
+    gameName: game ? game.name : '',
+    gameLocation: game ? game.location : '',
   })
   if (ctx.state.chatTo && ctx.state.role === 'player') {
     await ctx.telegram.sendMessage(ctx.state.chatTo, `
