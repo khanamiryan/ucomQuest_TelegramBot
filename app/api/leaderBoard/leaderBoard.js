@@ -4,12 +4,12 @@ const router = express.Router()
 
 router.get('/', async (req, res) => {
   const users = await Users.aggregate([
-    // {
-    //   $match: {
-    //     role: 'player',
-    //     id: { $exists: true}
-    //   }
-    // },
+    {
+      $match: {
+        role: 'player',
+        id: { $exists: true}
+      }
+    },
     {
       $lookup:
         {
@@ -35,8 +35,12 @@ router.get('/', async (req, res) => {
     {
       $addFields: {locationData: { $arrayElemAt: [ "$location", 0 ] }}
     },
+    {
+      $addFields: {locationName: "$locationData.name" },
+    },
     {$project: {location: 0}},
-    { $sort : { allPoint : -1 } }
+    { $addFields: {  total: { $add: [ "$locationPoint", "$allPoint" ] }} },
+    { $sort : { total : -1 } }
   ])
   res.json(users)
 })

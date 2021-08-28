@@ -43,12 +43,13 @@ const onFile = async (ctx) => {
       parse_mode: 'html'
     })
     await ctx.telegram.forwardMessage(ctx.state.chatTo, ctx.state.user.id, ctx.message.message_id)
+    const userLocation = await getLocationDataById(ctx.state.user.playingLocationId);
     if (game && game._id) {
       const gameButtons = [
         [{ text: `✅ approve`, callback_data: `gTo:appG/uId=${ctx.state.userId}`}, // app = approve, gTo = gameTo, uId = userId,
           { text: `❌ reject`, callback_data: `gTo:rejG/uId=${ctx.state.userId}`}] // rej = reject, gTo = gameTo, uId = userId,
       ];
-      await ctx.telegram.sendMessage(ctx.state.chatTo, `GameName: ${game.name}`, {reply_markup: JSON.stringify({inline_keyboard: gameButtons})})
+      await ctx.telegram.sendMessage(ctx.state.chatTo, `GameName: ${game.name}\nLocationName: ${userLocation.name}`, {reply_markup: JSON.stringify({inline_keyboard: gameButtons})})
     }
   } else {
     ctx.state.chatTo && await ctx.telegram.forwardMessage(ctx.state.chatTo, ctx.state.user.id, ctx.message.message_id)
@@ -75,13 +76,14 @@ const onPhoto = async (ctx) => {
 <i>send you a photo</i>`, {
       parse_mode: 'html'
     })
+    const userLocation = await getLocationDataById(ctx.state.user.playingLocationId);
     await ctx.telegram.sendPhoto(ctx.state.chatTo, ctx.message.photo.pop().file_id)
     if (game && game._id) {
       const gameButtons = [
         [{ text: `✅ approve`, callback_data: `gTo:appG/uId=${ctx.state.userId}`}, // appG = approve Game, uId = userId,
           { text: `❌ reject`, callback_data: `gTo:rejG/uId=${ctx.state.userId}`}] // rejG = reject Game, uId = userId,
       ];
-      await ctx.telegram.sendMessage(ctx.state.chatTo, `GameName: ${game.name}`, {reply_markup: JSON.stringify({inline_keyboard: gameButtons})})
+      await ctx.telegram.sendMessage(ctx.state.chatTo, `GameName: ${game.name}\nLocationName: ${userLocation.name}`, {reply_markup: JSON.stringify({inline_keyboard: gameButtons})})
     } else if (ctx.state.user.playStatus === 'goingLocation') {
       const userLocation = await getLocationDataById(ctx.state.user.playingLocationId);
       const gameButtons = [
@@ -116,12 +118,13 @@ const onVideo = async (ctx) => {
       parse_mode: 'html'
     })
     await ctx.telegram.sendVideo(ctx.state.chatTo, ctx.message.video.file_id)
+    const userLocation = await getLocationDataById(ctx.state.user.playingLocationId);
     if (game && game._id) {
       const gameButtons = [
         [{ text: `✅ approve`, callback_data: `gTo:appG/uId=${ctx.state.userId}`}, // app = approve, gTo = gameTo, uId = userId,
           { text: `❌ reject`, callback_data: `gTo:rejG/uId=${ctx.state.userId}`}] // rej = reject, gTo = gameTo, uId = userId,
       ];
-      await ctx.telegram.sendMessage(ctx.state.chatTo, `GameName: ${game.name}`, {reply_markup: JSON.stringify({inline_keyboard: gameButtons})})
+      await ctx.telegram.sendMessage(ctx.state.chatTo, `GameName: ${game.name}\nLocationName: ${userLocation.name}`, {reply_markup: JSON.stringify({inline_keyboard: gameButtons})})
     }
   } else {
     ctx.state.chatTo && await ctx.telegram.sendVideo(ctx.state.chatTo, ctx.message.video.file_id)

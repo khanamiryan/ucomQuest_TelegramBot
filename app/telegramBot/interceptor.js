@@ -46,7 +46,7 @@ const interceptor = async (ctx, next) => {
 
   const [code, text, point] = ctx.message && ctx.message.text ? ctx.message.text.split(':') : []
   if (code && ctx.state.role === 'admin' && myCommands[code.trim()]) {
-    const [player] = await getUserInfo(text.trim())
+    const [player] = await getUserInfo((text || '').trim())
     switch (code.trim()) {
       case 'cancelGame':
         await updateUser({id: player.id, data: {

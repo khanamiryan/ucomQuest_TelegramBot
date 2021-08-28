@@ -213,7 +213,7 @@ const approveGame = async ({ctx, text}) => {
           $unset: { playingLocationTime: ""},
         }
       })
-      await ctx.telegram.sendMessage(userId, 'You are finishGames')
+      await ctx.telegram.sendMessage(userId, 'You are finish Location')
     } else {
       await updateUser({
         id: userData.id,
