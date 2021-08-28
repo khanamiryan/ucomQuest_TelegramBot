@@ -3,11 +3,17 @@ const router = express.Router()
 const Router = require('./router')
 router.use('/', Router)
 const bot = require('./telegramBot/index')
-
-
 const mongoose = require('mongoose');
+
 console.log(process.env.mongodb);
-mongoose.connect(process.env.mongodb, { useNewUrlParser: true, useUnifiedTopology: true  })
+mongoose.connect(process.env.mongodb, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  ssl: true,
+  sslValidate: true,
+  sslCA: require('fs').readFileSync(`${__dirname}/ca-certificate.crt`)
+
+}, () => {})
 const db = mongoose.connection;
 
 db.once('open', () => {
