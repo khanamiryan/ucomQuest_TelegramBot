@@ -25,7 +25,6 @@ router.post('/',  upload.single('file'), async (req, res) => {
 router.put('/', upload.single('file'), async (req, res) => {
   let body = req.body;
   if (req.file && req.file.filename) {
-    console.log(req.file);
     body.fileName = req.file.filename
   }
   const game = await Games.updateOne({_id: body._id}, body);

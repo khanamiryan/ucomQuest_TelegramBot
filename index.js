@@ -12,7 +12,7 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use((req, res, next) => {
   const bearerHeader = req.headers['authorization'];
-  if(req.url === '/login') {
+  if(req.url === '/login' || req.url === '/leaderboard') {
     next()
   } else if (bearerHeader) {
     const [,bearer] = bearerHeader.split(' ');
