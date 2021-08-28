@@ -5,7 +5,7 @@ const {getGameById} = require("../api/game/game");
 const onText = async (ctx) => {
   const [code, text] = ctx.message && ctx.message.text.split(':')
   const user = code ? await getUserByCode(code) : null;
-  if (user && text) {
+  if (user && text && ctx.state.role === 'admin') {
     await ctx.telegram.sendMessage(user.id, `<b><i>${text}</i></b>`, {
       parse_mode: 'html'
     })

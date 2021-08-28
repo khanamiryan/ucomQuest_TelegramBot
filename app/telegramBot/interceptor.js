@@ -1,8 +1,6 @@
 const Users = require("../api/user/user.schema");
 const {getUserById, updateUser, getUserByVerificationCode, getUserInfo} = require("../api/user/user");
 const {showGameMenu} = require("./game");
-const fs = require("fs");
-const path = require("path");
 
 const myCommands = {
   stop: 'chatting is stop',
