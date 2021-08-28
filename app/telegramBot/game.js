@@ -92,12 +92,16 @@ ${gameData.fullDescription}`, {
       `<i>Uploading file ...</i>`, {
         parse_mode: 'html'
       })
-    const buffer =  getFile(gameData.fileName)
-    await ctx.replyWithDocument({source: buffer, filename: gameData.fileName }).then(async (e) => {
-      await bot.telegram.deleteMessage(ctx.state.user.id, message.message_id).then().catch((err) => {
-        console.log(2222, err);
+    try {
+      const buffer =  getFile(gameData.fileName)
+      await ctx.replyWithDocument({source: buffer, filename: gameData.fileName }).then(async (e) => {
+        await bot.telegram.deleteMessage(ctx.state.user.id, message.message_id).then().catch((err) => {
+          console.log(2222, err);
+        })
       })
-    })
+    } catch (e) {
+      console.log('file error', e);
+    }
   }
 }
 
