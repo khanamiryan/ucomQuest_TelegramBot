@@ -3,6 +3,7 @@ const File = require("./file.schema");
 const fs = require("fs");
 const path = require("path");
 const router = express.Router()
+const FileType = require('file-type');
 const http = require('https'); // or 'https' for https:// URLs
 router.post('/', async (req, res) => {
   const file = saveFile(req.body)
@@ -32,9 +33,13 @@ const getFile = (filename) => {
   const filePath = `../../../uploads/${filename}`
   return fs.readFileSync(path.join(__dirname, filePath))
 }
-
+const getFileType = (filename) => {
+  const filePath = `../../../uploads/${filename}`
+  return FileType.fromFile(path.join(__dirname, filePath))
+}
 module.exports = {
   router,
   saveFile,
+  getFileType,
   getFile,
 }

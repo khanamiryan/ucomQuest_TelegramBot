@@ -7,7 +7,7 @@ const {getLocationDataById} = require("../api/location/location");
 const {getGameById, updateGame} = require("../api/game/game");
 const {newMessage} = require("../api/messages/messages");
 const moment = require('moment');
-const {getFile} = require("../api/file/file");
+const {getFile, getFileType} = require("../api/file/file");
 const bot = new Telegraf(process.env.botToken, {
   polling: true,
 });
@@ -93,12 +93,29 @@ ${gameData.fullDescription}`, {
         parse_mode: 'html'
       })
     try {
+      const type = await getFileType(gameData.fileName)
       const buffer =  getFile(gameData.fileName)
-      await ctx.replyWithDocument({source: buffer, filename: gameData.fileName }).then(async (e) => {
-        await bot.telegram.deleteMessage(ctx.state.user.id, message.message_id).then().catch((err) => {
-          console.log(2222, err);
+      switch (type.mime.split('/')[0]) {
+        case 'image':  await ctx.replyWithPhoto({source: buffer, filename: gameData.fileName }).then(async (e) => {
+          await bot.telegram.deleteMessage(ctx.state.user.id, message.message_id).then().catch((err) => {
+            console.log(2222, err);
+          })
         })
-      })
+          break;
+        case 'video':  await ctx.replyWithVideo({source: buffer, filename: gameData.fileName }).then(async (e) => {
+          await bot.telegram.deleteMessage(ctx.state.user.id, message.message_id).then().catch((err) => {
+            console.log(2222, err);
+          })
+        })
+          break;
+        default:  await ctx.replyWithDocument({source: buffer, filename: gameData.fileName }).then(async (e) => {
+          await bot.telegram.deleteMessage(ctx.state.user.id, message.message_id).then().catch((err) => {
+            console.log(2222, err);
+          })
+        })
+          break;
+      }
+
     } catch (e) {
       console.log('file error', e);
     }
@@ -149,12 +166,14 @@ const showGameMenu = async (userId) => {
           }
       }
     ])
-    const gameButtons = [];
+    let gameButtonsArray = [];
     for (const game of games) {
-      gameButtons.unshift([
+      gameButtonsArray.unshift(
         {text: `${game.name}: ${game.point}`, callback_data: `gTo:gId/lG=${game._id}`}, // gId = gameId
-      ])
+      )
     }
+    const gameButtons = [];
+    while(gameButtonsArray.length) gameButtons.push(gameButtonsArray.splice(0,+process.env.buttonCountInRow));
     if (gameType === 'levelUp') {
       await updateUser({
         id: userId,
