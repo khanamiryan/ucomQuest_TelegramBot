@@ -6,19 +6,7 @@ const express = require("express");
 const app = express();
 const btoa = require('btoa');
 const appRoute = require('./app/app')
-const corsOpts = {
-  origin: '*',
-
-  methods: [
-    'GET',
-    'POST',
-  ],
-
-  allowedHeaders: [
-    'Content-Type',
-  ],
-};
-app.use(cors(corsOpts))
+app.use(cors())
 app.use(express.json())
 
 app.use(express.urlencoded({ extended: true }))
