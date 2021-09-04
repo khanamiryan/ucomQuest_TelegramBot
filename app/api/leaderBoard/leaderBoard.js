@@ -3,7 +3,7 @@ const Users = require('../user/user.schema')
 const router = express.Router()
 
 router.get('/', async (req, res) => {
-  const users = await Users.aggregate([
+  const aggregate = [
     {
       $match: {
         role: 'player',
@@ -40,8 +40,21 @@ router.get('/', async (req, res) => {
     },
     {$project: {location: 0}},
     { $addFields: {  total: { $add: [ "$locationPoint", "$allPoint" ] }} },
-    { $sort : { total : -1 } }
-  ])
+    { $sort : { total : -1 } },
+  ]
+  const percent = await Users.aggregate([...aggregate,     {
+    $group : {
+      _id: null,
+      max: { $max : "$total" },
+      // min: { $min : "$total" }
+    },
+  }])
+  const users = await Users.aggregate([...aggregate,
+    {
+      $addFields: {
+        percent: 77 / percent[0].max
+      }
+    }])
   res.json(users)
 })
 router.get('/admins', (req, res) => {
