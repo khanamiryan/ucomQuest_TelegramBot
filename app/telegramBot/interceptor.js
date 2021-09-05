@@ -63,7 +63,7 @@ const interceptor = async (ctx, next) => {
           player.id && await showGameMenu(player.id)
           break
         case 'point':
-          await updateUser({
+          player.id && await updateUser({
             id: player.id, data: {
               $inc: {
                 locationPoint: point
