@@ -75,7 +75,7 @@ const interceptor = async (ctx, next) => {
 <b>Team Name</b>: <i>${player.teamName}</i>
 <b>Point</b>: <i>${point}</i>`
             , {parse_mode: 'HTML'})
-          player.id && await showGameMenu(player.id)
+          // player.id && await showGameMenu(player.id)
           break
         case 'stop':
           await updateUser({
