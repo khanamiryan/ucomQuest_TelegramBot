@@ -49,7 +49,7 @@ const interceptor = async (ctx, next) => {
     const [player] = await getUserInfo((text || '').trim())
     switch (code.trim()) {
       case 'cancelGame':
-        await updateUser({id: player.id, data: {
+        player.id && await updateUser({id: player.id, data: {
             playingGameId: undefined,
             $unset: { playingGameTime: ""},
           }})
@@ -57,7 +57,7 @@ const interceptor = async (ctx, next) => {
           `<b>Game canceled</b>
 <b>Team Name</b>: <i>${player.teamName}</i>`
           , {parse_mode: 'HTML'})
-        await showGameMenu(player.id)
+        player.id && await showGameMenu(player.id)
         break
       case 'point':
         await updateUser({id: player.id, data: {
@@ -70,7 +70,7 @@ const interceptor = async (ctx, next) => {
 <b>Team Name</b>: <i>${player.teamName}</i>
 <b>Point</b>: <i>${point}</i>`
           , {parse_mode: 'HTML'})
-        await showGameMenu(player.id)
+        player.id && await showGameMenu(player.id)
         break
       case 'stop':
         await updateUser({id: user.id, data: {
