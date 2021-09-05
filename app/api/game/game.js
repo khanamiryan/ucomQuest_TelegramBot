@@ -2,6 +2,9 @@ const express = require('express');
 const Games = require('./game.schema')
 const router = express.Router()
 const multer  = require('multer')
+const path = require("path");
+const fs = require("fs");
+const {getFile, getFileType} = require("../file/file");
 const storageConfig = multer.diskStorage({
   destination: (req, file, cb) =>{
     cb(null, "uploads");
@@ -31,7 +34,7 @@ router.put('/', upload.single('file'), async (req, res) => {
   res.json(game)
 })
 router.get('/', async (req, res) => {
-  const games = await Games.aggregate([
+  let games = await Games.aggregate([
     {
       $lookup:
         {
@@ -46,6 +49,16 @@ router.get('/', async (req, res) => {
     },
     {$project: {locationData: 0}},
   ])
+  // games = await Promise.all(games.map(async game => {
+  //   if(game.fileName) {
+  //     return {
+  //       ...game,
+  //       fileType: await getFileType(game.fileName),
+  //       fileData: getFile(game.fileName),
+  //     }
+  //   }
+  //   return game
+  // }))
   res.json(games)
 })
 router.delete('/:id', async (req, res) => {

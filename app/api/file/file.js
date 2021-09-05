@@ -13,7 +13,13 @@ router.get('/', async (req, res) => {
   const files = await File.find();
   res.json(files)
 })
-
+router.get('/fileData/:fileName', async (req, res) => {
+  const data = {
+    fileType: await getFileType(req.params.fileName),
+    fileData: getFile(req.params.fileName),
+  }
+  res.json(data)
+})
 const saveFile = async (data) => {
   const dir = path.join(__dirname, `../../../files/${data.userTeamName}/`)
   const fileName = `${dir}/${data.fileName}`
