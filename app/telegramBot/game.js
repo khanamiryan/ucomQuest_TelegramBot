@@ -148,76 +148,80 @@ ${gameData.fullDescription}`, {
 
 // Game Menu
 const showGameMenu = async (userId) => {
-  const user = await getUserById(userId)
-  await deleteMessagesFunction(userId)
-  if (user.role === 'admin') {
-    await bot.telegram.sendMessage(userId, 'you are Admin')
-    return false
-  }
-  if (user.playStatus === 'finishGames') {
-    await bot.telegram.sendMessage(userId, 'you are finishGames')
-  } else if(user.playStatus === 'goingLocation') {
-    const location = await getLocationDataById(user.playingLocationId)
-    await bot.telegram.sendMessage(userId, location.startDescription)
-  } else if (user.playingGameId) {
-    await bot.telegram.sendMessage(userId, 'Now you playing a game')
-  } else {
-    const userGames = await Users.aggregate([
-      {$match: {id: userId}},
-    ])
-    const locationData = await getLocationDataById(user.playingLocationId)
-    const gameType =  user.locationPoint < locationData.finishPoint ? 'standardGame' : 'levelUp'
-    const games = await Game.aggregate([
-      {$match: {locationId: user.playingLocationId}},
-      {
-        $match: {
-          gameCode: {
-            $not: {
-              $in: userGames[0].playedGames
+  try {
+    const user = await getUserById(userId)
+    await deleteMessagesFunction(userId)
+    if (user.role === 'admin') {
+      await bot.telegram.sendMessage(userId, 'you are Admin')
+      return false
+    }
+    if (user.playStatus === 'finishGames') {
+      await bot.telegram.sendMessage(userId, 'you are finishGames')
+    } else if (user.playStatus === 'goingLocation') {
+      const location = await getLocationDataById(user.playingLocationId)
+      await bot.telegram.sendMessage(userId, location.startDescription)
+    } else if (user.playingGameId) {
+      await bot.telegram.sendMessage(userId, 'Now you playing a game')
+    } else {
+      const userGames = await Users.aggregate([
+        {$match: {id: userId}},
+      ])
+      const locationData = await getLocationDataById(user.playingLocationId)
+      const gameType = user.locationPoint < locationData.finishPoint ? 'standardGame' : 'levelUp'
+      const games = await Game.aggregate([
+        {$match: {locationId: user.playingLocationId}},
+        {
+          $match: {
+            gameCode: {
+              $not: {
+                $in: userGames[0].playedGames
+              }
             }
           }
-        }
-      },
-      {
-        $match: {
-          gameType,
-        }
-      },
-      {
-        $match:
-          {
-            $expr: {$gt: ["$maxPlayerCount", "$nowPlaying"]}
+        },
+        {
+          $match: {
+            gameType,
           }
-      }
-    ])
-    let gameButtonsArray = [];
-    for (const game of games) {
-      gameButtonsArray.unshift(
-        {text: `${game.name}: ${game.point}`, callback_data: `gTo:gId/lG=${game._id}`}, // gId = gameId
-      )
-    }
-    const gameButtons = [];
-    while(gameButtonsArray.length) gameButtons.push(gameButtonsArray.splice(0,+process.env.buttonCountInRow));
-    if (gameType === 'levelUp') {
-      await updateUser({
-        id: userId,
-        data: {
-          playStatus: 'playingLevelUp',
+        },
+        {
+          $match:
+            {
+              $expr: {$gt: ["$maxPlayerCount", "$nowPlaying"]}
+            }
         }
-      })
-      await bot.telegram.sendMessage(userId, `You are levelUp`).then(async (e) => {
+      ])
+      let gameButtonsArray = [];
+      for (const game of games) {
+        gameButtonsArray.unshift(
+          {text: `${game.name}: ${game.point}`, callback_data: `gTo:gId/lG=${game._id}`}, // gId = gameId
+        )
+      }
+      const gameButtons = [];
+      while (gameButtonsArray.length) gameButtons.push(gameButtonsArray.splice(0, +process.env.buttonCountInRow));
+      if (gameType === 'levelUp') {
+        await updateUser({
+          id: userId,
+          data: {
+            playStatus: 'playingLevelUp',
+          }
+        })
+        await bot.telegram.sendMessage(userId, `You are levelUp`).then(async (e) => {
+          await newMessage({
+            messageId: e.message_id,
+            userId,
+          })
+        });
+      }
+      await bot.telegram.sendMessage(userId, `Games`, {reply_markup: JSON.stringify({inline_keyboard: gameButtons})}).then(async (e) => {
         await newMessage({
           messageId: e.message_id,
           userId,
         })
-      });
-    }
-    await bot.telegram.sendMessage(userId, `Games`, {reply_markup: JSON.stringify({inline_keyboard: gameButtons})}).then(async (e) => {
-      await newMessage({
-        messageId: e.message_id,
-        userId,
       })
-    })
+    }
+  } catch (e) {
+    console.log(1111, e);
   }
 }
 const approveGame = async ({ctx, text}) => {
