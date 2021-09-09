@@ -18,6 +18,7 @@ const interceptor = async (ctx, next) => {
       const verificationCode = await getUserByVerificationCode(ctx.message.text)
       if (verificationCode) {
         if (verificationCode.id) {
+          await ctx.reply('Code not valid')
           return false
         }
         await Users.updateOne({verificationCode: ctx.message.text}, ctx.from)
