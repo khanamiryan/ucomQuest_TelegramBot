@@ -19,8 +19,14 @@ const deleteMessagesFunction = async (userId) => {
   })
   if (deleteMessages.length) {
     for (const deleteMessage of deleteMessages) {
-      bot.telegram.deleteMessage(userId, deleteMessage.messageId).then().catch((err) => {
+      bot.telegram.deleteMessage(userId, deleteMessage.messageId).then().catch(async (err) => {
         console.log(2222, err);
+        await Messages.updateMany({
+          userId,
+          messagesType: 'delete'
+        }, {
+          status: 'deleted'
+        })
       })
     }
     await Messages.updateMany({
@@ -97,20 +103,38 @@ ${gameData.fullDescription}`, {
       const buffer =  getFile(gameData.fileName)
       switch (type.mime.split('/')[0]) {
         case 'image':  await ctx.replyWithPhoto({source: buffer, filename: gameData.fileName }).then(async (e) => {
-          await bot.telegram.deleteMessage(ctx.state.user.id, message.message_id).then().catch((err) => {
+          await bot.telegram.deleteMessage(ctx.state.user.id, message.message_id).then().catch(async (err) => {
             console.log(2222, err);
+            await Messages.updateMany({
+              userId: ctx.state.user.id,
+              messagesType: 'delete'
+            }, {
+              status: 'deleted'
+            })
           })
         })
           break;
         case 'video':  await ctx.replyWithVideo({source: buffer, filename: gameData.fileName }).then(async (e) => {
-          await bot.telegram.deleteMessage(ctx.state.user.id, message.message_id).then().catch((err) => {
+          await bot.telegram.deleteMessage(ctx.state.user.id, message.message_id).then().catch(async (err) => {
             console.log(2222, err);
+            await Messages.updateMany({
+              userId: ctx.state.user.id,
+              messagesType: 'delete'
+            }, {
+              status: 'deleted'
+            })
           })
         })
           break;
         default:  await ctx.replyWithDocument({source: buffer, filename: gameData.fileName }).then(async (e) => {
-          await bot.telegram.deleteMessage(ctx.state.user.id, message.message_id).then().catch((err) => {
+          await bot.telegram.deleteMessage(ctx.state.user.id, message.message_id).then().catch(async (err) => {
             console.log(2222, err);
+            await Messages.updateMany({
+              userId: ctx.state.user.id,
+              messagesType: 'delete'
+            }, {
+              status: 'deleted'
+            })
           })
         })
           break;
