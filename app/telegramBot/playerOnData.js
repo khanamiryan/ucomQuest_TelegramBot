@@ -150,7 +150,7 @@ const onContact = async (ctx) => {
   ctx.reply(`thank you our admins will contact you, by that number\n${ctx.update.message.contact.phone_number}`)
 }
 const onLocation = async (ctx) => {
-  console.log(123, ctx);
+  // console.log(123, ctx);
   // await updateUser({
   //   id: ctx.update.message.contact.user_id,
   //   data: {

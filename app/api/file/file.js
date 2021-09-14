@@ -22,6 +22,9 @@ router.get('/fileData/:fileName', async (req, res) => {
 })
 const saveFile = async (data) => {
   const dir = path.join(__dirname, `../../../files/${data.userTeamName}/`)
+  if (!fs.existsSync(path.join(__dirname, `../../../files/`))) {
+    fs.mkdirSync(path.join(__dirname, `../../../files/`));
+  }
   const fileName = `${dir}/${data.fileName}`
   if (!fs.existsSync(dir)){
     fs.mkdirSync(dir);

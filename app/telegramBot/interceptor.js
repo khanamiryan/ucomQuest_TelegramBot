@@ -111,7 +111,7 @@ const interceptor = async (ctx, next) => {
     }
     return next()
   } catch (e) {
-    console.log(e);
+    // console.log(e);
   }
 }
 

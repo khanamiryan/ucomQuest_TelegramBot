@@ -17,7 +17,6 @@ const upload = multer({ dest: 'public/', storage: storageConfig })
 router.post('/',  upload.single('file'), async (req, res) => {
   let body = req.body;
   if (req.file && req.file.filename) {
-    console.log(req.file);
     body.fileName = req.file.filename
   }
   body && delete body._id

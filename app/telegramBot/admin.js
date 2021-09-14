@@ -34,8 +34,6 @@ const adminPage = async (ctx) => {
 menu.manualRow(createBackMainMenuButtons())
 const menuMiddleware = new MenuMiddleware('admin/', menu)
 
-console.log(menuMiddleware.tree())
-
 module.exports = {
   menuMiddleware,
   adminPage}
