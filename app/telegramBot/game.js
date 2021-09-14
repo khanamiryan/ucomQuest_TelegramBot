@@ -17,16 +17,10 @@ const deleteMessagesFunction = async (userId) => {
     messagesType: 'delete',
     status: 'active',
   })
-  await Messages.updateMany({
-    userId,
-    messagesType: 'delete'
-  }, {
-    status: 'deleted'
-  })
   if (deleteMessages.length) {
     for (const deleteMessage of deleteMessages) {
       bot.telegram.deleteMessage(userId, deleteMessage.messageId).then().catch(async (err) => {
-        // console.log(2222, err);
+        console.log(2222, err);
         await Messages.updateMany({
           userId,
           messagesType: 'delete'
@@ -35,6 +29,12 @@ const deleteMessagesFunction = async (userId) => {
         })
       })
     }
+    await Messages.updateMany({
+      userId,
+      messagesType: 'delete'
+    }, {
+      status: 'deleted'
+    })
   }
 }
 
@@ -71,7 +71,7 @@ const showGame = async ({ctx, text}) => {
 }
 const playGame = async ({ctx, text}) => {
   ctx.deleteMessage().catch(err => {
-    // console.log(err)
+    console.log(err)
   })
   const [,locationGame] = text.split('/')
   const [,locationGameId] = locationGame.split('=')
@@ -104,7 +104,7 @@ ${gameData.fullDescription}`, {
       switch (type.mime.split('/')[0]) {
         case 'image':  await ctx.replyWithPhoto({source: buffer, filename: gameData.fileName }).then(async (e) => {
           await bot.telegram.deleteMessage(ctx.state.user.id, message.message_id).then().catch(async (err) => {
-            // console.log(2222, err);
+            console.log(2222, err);
             await Messages.updateMany({
               userId: ctx.state.user.id,
               messagesType: 'delete'
@@ -116,7 +116,7 @@ ${gameData.fullDescription}`, {
           break;
         case 'video':  await ctx.replyWithVideo({source: buffer, filename: gameData.fileName }).then(async (e) => {
           await bot.telegram.deleteMessage(ctx.state.user.id, message.message_id).then().catch(async (err) => {
-            // console.log(2222, err);
+            console.log(2222, err);
             await Messages.updateMany({
               userId: ctx.state.user.id,
               messagesType: 'delete'
@@ -128,7 +128,7 @@ ${gameData.fullDescription}`, {
           break;
         default:  await ctx.replyWithDocument({source: buffer, filename: gameData.fileName }).then(async (e) => {
           await bot.telegram.deleteMessage(ctx.state.user.id, message.message_id).then().catch(async (err) => {
-            // console.log(2222, err);
+            console.log(2222, err);
             await Messages.updateMany({
               userId: ctx.state.user.id,
               messagesType: 'delete'
@@ -141,7 +141,7 @@ ${gameData.fullDescription}`, {
       }
 
     } catch (e) {
-      // console.log('file error', e);
+      console.log('file error', e);
     }
   }
 }
@@ -151,7 +151,6 @@ const showGameMenu = async (userId) => {
   try {
     const user = await getUserById(userId)
     await deleteMessagesFunction(userId)
-    console.log(123, userId, user);
     if (user.role === 'admin') {
       await bot.telegram.sendMessage(userId, 'you are Admin')
       return false
@@ -199,8 +198,7 @@ const showGameMenu = async (userId) => {
         )
       }
       const gameButtons = [];
-      // while (gameButtonsArray.length) gameButtons.push(gameButtonsArray.splice(0, +process.env.buttonCountInRow));
-      console.log(123, 'gameButtons', +process.env.buttonCountInRow);
+      while (gameButtonsArray.length) gameButtons.push(gameButtonsArray.splice(0, +process.env.buttonCountInRow));
       if (gameType === 'levelUp') {
         await updateUser({
           id: userId,
@@ -215,20 +213,20 @@ const showGameMenu = async (userId) => {
           })
         });
       }
-      // await bot.telegram.sendMessage(userId, `Games`, {reply_markup: JSON.stringify({inline_keyboard: gameButtons})}).then(async (e) => {
-      //   await newMessage({
-      //     messageId: e.message_id,
-      //     userId,
-      //   })
-      // })
+      await bot.telegram.sendMessage(userId, `Games`, {reply_markup: JSON.stringify({inline_keyboard: gameButtons})}).then(async (e) => {
+        await newMessage({
+          messageId: e.message_id,
+          userId,
+        })
+      })
     }
   } catch (e) {
-    // console.log(1111, e);
+    console.log(1111, e);
   }
 }
 const approveGame = async ({ctx, text}) => {
   ctx.deleteMessage().catch(err => {
-    // console.log(err)
+    console.log(err)
   })
   const [,user] = text.split('/')
   const [,userId] = user.split('=')
@@ -288,7 +286,7 @@ const rejectGame = async ({ctx, text}) => {
 }
 const approveLocation = async ({ctx, text}) => {
   ctx.deleteMessage().catch(err => {
-    // console.log(err)
+    console.log(err)
   })
   const [,user] = text.split('/')
   const [,userId] = user.split('=')
@@ -306,7 +304,7 @@ const rejectLocation = async ({ctx, text}) => {
 }
 const reject = async ({ctx, text}) => {
   ctx.deleteMessage().catch(err => {
-    // console.log(err)
+    console.log(err)
   })
   const [,user] = text.split('/')
   const [,userId] = user.split('=')
