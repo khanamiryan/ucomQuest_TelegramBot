@@ -9,9 +9,9 @@ console.log(process.env.mongodb);
 mongoose.connect(process.env.mongodb, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  ssl: true,
-  sslValidate: true,
-  sslCA: require('fs').readFileSync(`${__dirname}/ca-certificate.crt`)
+  // ssl: true,
+  // sslValidate: true,
+  // sslCA: require('fs').readFileSync(`${__dirname}/ca-certificate.crt`)
 
 }, () => {})
 const db = mongoose.connection;
