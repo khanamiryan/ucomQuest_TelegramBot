@@ -35,7 +35,7 @@ const onFile = async (ctx) => {
     gameName: game && game.name,
     gameLocation: game && game.location,
   })
-  if (ctx.stat.chatTo && ctx.state.role === 'player') {
+  if (ctx.stat && ctx.stat.chatTo && ctx.state.role === 'player') {
     await ctx.telegram.sendMessage(ctx.state.chatTo, `
 <b>plyerCode</b>: <b>${ctx.state.user.code}</b>
 <b>playerTeamName</b>: ${ctx.state.user.teamName}
