@@ -51,8 +51,8 @@ const showGame = async ({ctx, text}) => {
     })
   }
   const gameButtons = [
-    [{ text: `play Game`, callback_data: `gTo:pG/lGId=${locationGameId}`}, // pG = playGame, gTo = gameTo, lGId = locationGameId,
-      { text: `🔙 back ↩`, callback_data: `gTo:gM/lGId=${locationGameId}`}] // gM = gameMenu, gTo = gameTo
+    [{ text: `Սկսել խաղը`, callback_data: `gTo:pG/lGId=${locationGameId}`}, // pG = playGame, gTo = gameTo, lGId = locationGameId,
+      { text: `🔙 գնալ հետ ↩`, callback_data: `gTo:gM/lGId=${locationGameId}`}] // gM = gameMenu, gTo = gameTo
   ];
   await ctx.reply(`<b>${gameData.name}</b>: <i>${gameData.point}</i>`, {
     parse_mode: 'HTML'
@@ -89,7 +89,7 @@ const playGame = async ({ctx, text}) => {
     playingGameTime: moment().add(gameData.gamePlayTime, 'minutes')
   })
   await ctx.reply(
-    `<b>Now you are playing <i>${gameData.name}</i></b>
+    `<b>Այժմ դուք խաղում եք <i>${gameData.name}</i> խաղը</b>
 ${gameData.fullDescription}`, {
       parse_mode: 'html'
     })
@@ -156,12 +156,12 @@ const showGameMenu = async (userId) => {
       return false
     }
     if (user.playStatus === 'finishGames') {
-      await bot.telegram.sendMessage(userId, 'you are finishGames')
+      await bot.telegram.sendMessage(userId, 'Դուք Վերջացրեցիք բոլոր Խաղերը')
     } else if (user.playStatus === 'goingLocation') {
       const location = await getLocationDataById(user.playingLocationId)
       await bot.telegram.sendMessage(userId, location.startDescription)
     } else if (user.playingGameId) {
-      await bot.telegram.sendMessage(userId, 'Now you playing a game')
+      await bot.telegram.sendMessage(userId, 'Դուք դեռ խաղի ընթացքի մեջ եք և այդ պատճառով խաղերին հասանելիություն չունեք։')
     } else {
       const userGames = await Users.aggregate([
         {$match: {id: userId}},
@@ -206,14 +206,16 @@ const showGameMenu = async (userId) => {
             playStatus: 'playingLevelUp',
           }
         })
-        await bot.telegram.sendMessage(userId, `You are levelUp`).then(async (e) => {
+        await bot.telegram.sendMessage(userId, `Դուք հավաքեցիք բավականաչափ միավոր <b>Level Up</b> խաղալու համար`, {
+          parse_mode: 'HTML'
+        }).then(async (e) => {
           await newMessage({
             messageId: e.message_id,
             userId,
           })
         });
       }
-      await bot.telegram.sendMessage(userId, `Games`, {reply_markup: JSON.stringify({inline_keyboard: gameButtons})}).then(async (e) => {
+      await bot.telegram.sendMessage(userId, `Խաղերը`, {reply_markup: JSON.stringify({inline_keyboard: gameButtons})}).then(async (e) => {
         await newMessage({
           messageId: e.message_id,
           userId,
@@ -247,7 +249,9 @@ const approveGame = async ({ctx, text}) => {
           locationPoint: +game.point
         },
       }})
-    await ctx.telegram.sendMessage(userId, 'շնորհավորում եմ դուք հաղթահարել եք խաղը')
+    await ctx.telegram.sendMessage(userId,`Շնորհավորում եմ դուք հաղթահարեցիք այս խաղը և վաստակել եք <b>${game.point}</b> միավոր։`, {
+      parse_mode: 'HTML'
+    })
   } else if (userData.playStatus === 'playingLevelUp') {
     const playingLocationStep = userData.playingLocationSteps.indexOf(userData.playingLocationId)
     if (playingLocationStep < userData.playingLocationSteps.length - 1) { // if playing in last location
@@ -264,7 +268,7 @@ const approveGame = async ({ctx, text}) => {
           $unset: { playingLocationTime: ""},
         }
       })
-      await ctx.telegram.sendMessage(userId, 'You are finish Location')
+      await ctx.telegram.sendMessage(userId, 'Շնորհավորում եմ դուք հաղթահարել եք այս տարածքի Խաղերը։\nՀաջորդիվ ուղևորվեք՝')
     } else {
       await updateUser({
         id: userData.id,
@@ -296,7 +300,7 @@ const approveLocation = async ({ctx, text}) => {
       playStatus: 'playingGame',
       playingLocationTime: moment().add(locationData.finishTime, 'minutes')
     }})
-  await ctx.telegram.sendMessage(userId, 'դուք հասաք նշված վայր')
+  await ctx.telegram.sendMessage(userId, 'Դուք հասել եք նշված վայր')
   await showGameMenu(userId)
 }
 const rejectLocation = async ({ctx, text}) => {
@@ -308,20 +312,26 @@ const reject = async ({ctx, text}) => {
   })
   const [,user] = text.split('/')
   const [,userId] = user.split('=')
-  await ctx.telegram.sendMessage(userId, 'Փորձեք կրկին')
+  await ctx.telegram.sendMessage(userId, 'Ձեր ուղարկված նկարն անվավեր է ճանաչվել մեր ադմինների կողմից։ Խնդրում ենք նորից փորձել։')
 }
 
 const showPoints = async (ctx) => {
   const {user} = await ctx.state
-  await ctx.reply(
-    `<b>${user.teamName}</b>
-<b>Location Point</b>: <i>${user.locationPoint}</i>
-<b>All Point</b>: <i>${user.allPoint}</i>
-`,
-    {
-      parse_mode: 'HTML'
-    }
-  )
+  if (!user.locationPoint && !user.allPoint) {
+    await ctx.reply(
+      `Սիրելի <b>${user.teamName}</b> թիմ, դուք դեռ չունեք միավորներ`,
+      {
+        parse_mode: 'HTML'
+      }
+    )
+  } else {
+    await ctx.reply(
+      `Սիրելի <b>${user.teamName}</b> թիմ ձեր միավորներն են <i>${user.locationPoint + user.allPoint}</i>`,
+      {
+        parse_mode: 'HTML'
+      }
+    )
+  }
 }
 
 const gameTo = async (ctx) => {

@@ -11,7 +11,7 @@ const myCommands = {
 
 
 const interceptor = async (ctx, next) => {
-  if (ctx.message.text === '/start') {
+  if (ctx.message && ctx.message.text === '/start') {
     return next()
   }
   try {
@@ -21,14 +21,14 @@ const interceptor = async (ctx, next) => {
       const verificationCode = await getUserByVerificationCode(ctx.message.text)
       if (verificationCode) {
         if (verificationCode.id) {
-          await ctx.reply('Code not valid')
+          await ctx.reply('Այս կոդը վավեր չէ')
           return false
         }
         await Users.updateOne({verificationCode: ctx.message.text}, ctx.from)
-        await ctx.reply(`you are connected\nplease insert your Team Name`)
+        await ctx.reply(`Դուք արդեն միացել եք մեր խաղին։\nԱյժմ գրեք Ձեր թիմի անունը, որպեսզի շարունակենք մեր խաղը։`)
         return false
       } else {
-        await ctx.reply('please insert CODE')
+        await ctx.reply('Ձեր թիմի կոդը սխալ է, խնդրում ենք ներմուծել ճիշտ կոդը։')
         return false
       }
     }
@@ -43,7 +43,7 @@ const interceptor = async (ctx, next) => {
     // set team name if not exist
     if (!user.teamName) {
       await Users.updateOne({id: user.id}, {teamName: ctx.message.text})
-      await ctx.reply(`Your team Name is <b>${ctx.message.text}</b>`, {parse_mode: 'HTML'})
+      await ctx.reply(`Սիրելի <b>${ctx.message.text}</b> թիմի անդամներ գտեք մեքենան, որի վրա գրված է Ձեր թիմի կոդը և ուղևորվեք ...`, {parse_mode: 'HTML'})
       ctx.state.teamName = ctx.message.text
       user.role === 'player' && await showGameMenu(user.id)
       return false
