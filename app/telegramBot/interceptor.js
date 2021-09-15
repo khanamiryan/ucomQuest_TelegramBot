@@ -11,6 +11,9 @@ const myCommands = {
 
 
 const interceptor = async (ctx, next) => {
+  if (ctx.message.text === '/start') {
+    return next()
+  }
   try {
     let user = await getUserById(ctx.from.id)
     // verify user by verificationCode
