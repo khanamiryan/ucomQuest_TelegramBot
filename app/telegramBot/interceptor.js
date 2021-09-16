@@ -81,7 +81,8 @@ const interceptor = async(ctx, next) => {
             await ctx.reply(
               `<b>Game canceled</b>
 <b>Team Name</b>: <i>${player.teamName}</i>`, {parse_mode: 'HTML'})
-            player.id && await showGameMenu(player.id)
+            await ctx.telegram.sendMessage(player.id, `Ձեր Խաղը չեղարկվել է`, {parse_mode: 'HTML'})
+            await showGameMenu(player.id)
             break
           case 'point':
             player.id && await updateUser({
