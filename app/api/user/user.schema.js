@@ -60,10 +60,10 @@ const userSchema = mongoose.Schema({
     type: Number,
     default: 0,
   },
-  updatingTeamName: {
-    type: Boolean,
-    default: false
-  }
+  // updatingTeamName: {
+  //   type: Boolean,
+  //   default: false
+  // }
 }, {
   versionKey: false,
   timestamps: true,

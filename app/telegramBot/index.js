@@ -24,7 +24,7 @@ bot.on('location', async (ctx) => onLocation(ctx))
 bot.use(admin.middleware())
 
 bot.command('admin', async ctx => adminPage(ctx))
-bot.command('name', async ctx => editTeamName(ctx))
+// bot.command('name', async ctx => editTeamName(ctx))
 bot.command('game', async ctx => showGameMenu(ctx.state.userId)) // open Games Menu
 bot.command('start', async ctx => sendWelcomeMessage(ctx)) // open Games Menu
 bot.command('points', async ctx => showPoints(ctx)) // open Games Menu
