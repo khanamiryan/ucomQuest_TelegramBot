@@ -366,7 +366,6 @@ const gameTo = async(ctx) => {
 }
 
 const sendWelcomeMessage = (ctx) => {
-    console.log(ctx.state);
     if (ctx.state.userId) {
         showGameMenu(ctx.state.userId).then()
     } else {

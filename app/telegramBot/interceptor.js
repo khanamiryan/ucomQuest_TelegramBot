@@ -15,18 +15,23 @@ const interceptor = async(ctx, next) => {
     let user = await getUserById(ctx.from.id)
     // verify user by verificationCode
     if (!user) {
+      if (ctx.message && ctx.message.text === '/start') {
+        return next()
+      }
       const verificationCode = await getUserByVerificationCode(ctx.message.text)
       if (verificationCode) {
-        if (ctx.message && ctx.message.text === '/start') {
-          return next()
-        }
         if (verificationCode.id) {
           await ctx.reply('Այս կոդը վավեր չէ')
           return false
         }
         await Users.updateOne({ verificationCode: ctx.message.text }, ctx.from)
-        await ctx.reply(`Շնորհավորում եմ Ձեզ: Դուք խաղի մեջ եք:\nԱյժմ գրեք Ձեր թիմի անունը, որպեսզի շարունակենք մեր խաղը։`)
-        return false
+        user = await getUserById(ctx.from.id)
+        if (!user.teamName) {
+          await ctx.reply(`Շնորհավորում եմ Ձեզ: Դուք խաղի մեջ եք:\nԱյժմ գրեք Ձեր թիմի անունը, որպեսզի շարունակենք մեր խաղը։`)
+          return false
+        } else {
+          await showGameMenu(user.id)
+        }
       } else {
         await ctx.reply('Ձեր թիմի կոդը սխալ է, խնդրում ենք ներմուծել ճիշտ կոդը։')
         return false
