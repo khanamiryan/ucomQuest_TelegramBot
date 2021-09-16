@@ -88,15 +88,15 @@ const playGame = async({ ctx, text }) => {
         playingGameTime: moment().add(gameData.gamePlayTime, 'minutes')
     })
     await ctx.reply(
-        `<b>Այժմ դուք խաղում եք <i>${gameData.name}</i> խաղը</b>
+      `<b>Այժմ դուք խաղում եք <i>${gameData.name}</i> խաղը</b>
 ${gameData.fullDescription}`, {
-            parse_mode: 'html'
-        })
+          parse_mode: 'html'
+      })
     if (gameData.fileName) {
         const message = await ctx.reply(
-            `<i>Uploading file ...</i>`, {
-                parse_mode: 'html'
-            })
+          `<i>Uploading file ...</i>`, {
+              parse_mode: 'html'
+          })
         try {
             const type = await getFileType(gameData.fileName)
             const buffer = getFile(gameData.fileName)
@@ -323,15 +323,15 @@ const showPoints = async(ctx) => {
     const { user } = await ctx.state
     if (!user.locationPoint && !user.allPoint) {
         await ctx.reply(
-            `Սիրելի <b>${user.teamName}</b> թիմ, դուք դեռ չունեք միավորներ`, {
-                parse_mode: 'HTML'
-            }
+          `Սիրելի <b>${user.teamName}</b> թիմ, դուք դեռ չունեք միավորներ`, {
+              parse_mode: 'HTML'
+          }
         )
     } else {
         await ctx.reply(
-            `Սիրելի <b>${user.teamName}</b> թիմ, դուք ունեք <i>${user.locationPoint + user.allPoint}</i> միավոր`, {
-                parse_mode: 'HTML'
-            }
+          `Սիրելի <b>${user.teamName}</b> թիմ, դուք ունեք <i>${user.locationPoint + user.allPoint}</i> միավոր`, {
+              parse_mode: 'HTML'
+          }
         )
     }
 }
@@ -366,7 +366,11 @@ const gameTo = async(ctx) => {
 }
 
 const sendWelcomeMessage = (ctx) => {
-    ctx.reply(`Բարի գալուստ։
+    console.log(ctx.state);
+    if (ctx.state.userId) {
+        showGameMenu(ctx.state.userId).then()
+    } else {
+        ctx.reply(`Բարի գալուստ։
 Շնորհավորում ենք դուք ունեք բացառիկ հնարավորություն մասնակցելու 
 <b>All Inclusive Armenia</b> 
 ընկերության կողմից կազմակերպված քաղաքային քվեստին։ 
@@ -374,8 +378,9 @@ const sendWelcomeMessage = (ctx) => {
 Ձեր խաղավարների մոտ կան թղթապանակներ, դրա մեջ գտնվող իրերը օգնելու են հաղթահարել մեր խաղերը։ 
 Գտեք այնտեղից առաջին խաղը։ 
 Այն լուծելու արդյունքում ուղարկեք մեզ ձեր թիմի կոդը, որպեսզի շարունակենք խաղալ։`, {
-        parse_mode: 'HTML'
-    })
+            parse_mode: 'HTML'
+        })
+    }
 }
 
 module.exports = {

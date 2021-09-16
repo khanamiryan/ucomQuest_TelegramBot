@@ -52,7 +52,7 @@ router.get('/', async (req, res) => {
   const users = await Users.aggregate([...aggregate,
     {
       $addFields: {
-        percent: 77 / percent[0].max
+        percent: 77 / (percent && percent[0] && percent[0].max) || 1
       }
     }])
   res.json(users)
