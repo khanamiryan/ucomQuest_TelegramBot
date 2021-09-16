@@ -7,7 +7,8 @@ const myCommands = {
   player: 'playerInfo',
   point: 'added point to player',
   cancelGame: 'player Games is canceled',
-  name: 'team new Name'
+  name: 'team new Name',
+  removePlayerInfo: 'remove Player Info, for change user'
 }
 
 
@@ -101,6 +102,11 @@ const interceptor = async(ctx, next) => {
               await ctx.telegram.sendMessage(player.id, `Ձեր թիմից պակասեցվեց <b>${command}</b> միավոր`, {parse_mode: 'HTML'})
             }
             break
+          case 'removePlayerInfo':
+            await Users.updateOne({id: player.id}, { $unset: { id: ""} });
+            await ctx.telegram.sendMessage(player.id, `Դուք հեռացված եք խաղից`, {parse_mode: 'HTML'})
+            await ctx.reply(`${player.teamName} info was removed`, {parse_mode: 'HTML'})
+            break;
           case 'name':
             player.id && await updateUser({
               id: player.id,
@@ -143,6 +149,8 @@ const interceptor = async(ctx, next) => {
             }
             break
         }
+      } else {
+        ctx.reply('user not found')
       }
       return false
     }
