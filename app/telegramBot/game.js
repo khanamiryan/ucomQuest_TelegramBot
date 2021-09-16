@@ -284,6 +284,7 @@ const approveGame = async({ ctx, text }) => {
             })
         }
     }
+    await bot.telegram.sendMessage(userId, 'Դուք ավարտեցիք Խաղը')
     await showGameMenu(userId)
 }
 const rejectGame = async({ ctx, text }) => {
