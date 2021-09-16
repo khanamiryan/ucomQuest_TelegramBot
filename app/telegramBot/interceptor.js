@@ -37,6 +37,11 @@ const interceptor = async(ctx, next) => {
         return false
       }
     }
+    if (user.updatingTeamName && ctx.message && ctx.message.text) {
+      await updateUser({id: ctx.state.user.id, data: {
+          updatingTeamName: false
+        }})
+    }
     ctx.state.role = user.role;
     ctx.state.chatTo = user.chatTo || '';
     ctx.state.playingLocationId = user.playingLocationId || '';
