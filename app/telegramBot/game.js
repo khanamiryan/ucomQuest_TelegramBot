@@ -336,6 +336,34 @@ const showPoints = async(ctx) => {
     }
 }
 
+
+const sendWelcomeMessage = (ctx) => {
+    if (ctx.state.userId) {
+        showGameMenu(ctx.state.userId).then()
+    } else {
+        ctx.reply(`Բարի գալուստ։
+Շնորհավորում ենք դուք ունեք բացառիկ հնարավորություն մասնակցելու 
+<b>All Inclusive Armenia</b> 
+ընկերության կողմից կազմակերպված քաղաքային քվեստին։ 
+Ձեզ սպասվում են հետաքրքիր ու յուրահատուկ խաղեր, որոնք երբևէ չեք խաղացել։
+Ձեր խաղավարների մոտ կան թղթապանակներ, դրա մեջ գտնվող իրերը օգնելու են հաղթահարել մեր խաղերը։ 
+Գտեք այնտեղից առաջին խաղը։ 
+Այն լուծելու արդյունքում ուղարկեք մեզ ձեր թիմի կոդը, որպեսզի շարունակենք խաղալ։`, {
+            parse_mode: 'HTML'
+        })
+    }
+}
+
+
+const editTeamName = async (ctx) => {
+    await updateUser({id: ctx.state.user.id, data: {
+            updatingTeamName: true
+        }})
+    await ctx.reply(`Մուտքագրեք նոր թիմի անուն`, {
+        parse_mode: 'html'
+    })
+}
+
 const gameTo = async(ctx) => {
     const [, text] = ctx.update.callback_query.data.split(':')
     const [command] = text.split('/')
@@ -365,25 +393,9 @@ const gameTo = async(ctx) => {
     return false
 }
 
-const sendWelcomeMessage = (ctx) => {
-    if (ctx.state.userId) {
-        showGameMenu(ctx.state.userId).then()
-    } else {
-        ctx.reply(`Բարի գալուստ։
-Շնորհավորում ենք դուք ունեք բացառիկ հնարավորություն մասնակցելու 
-<b>All Inclusive Armenia</b> 
-ընկերության կողմից կազմակերպված քաղաքային քվեստին։ 
-Ձեզ սպասվում են հետաքրքիր ու յուրահատուկ խաղեր, որոնք երբևէ չեք խաղացել։
-Ձեր խաղավարների մոտ կան թղթապանակներ, դրա մեջ գտնվող իրերը օգնելու են հաղթահարել մեր խաղերը։ 
-Գտեք այնտեղից առաջին խաղը։ 
-Այն լուծելու արդյունքում ուղարկեք մեզ ձեր թիմի կոդը, որպեսզի շարունակենք խաղալ։`, {
-            parse_mode: 'HTML'
-        })
-    }
-}
-
 module.exports = {
     showGameMenu,
+    editTeamName,
     gameTo,
     showPoints,
     sendWelcomeMessage

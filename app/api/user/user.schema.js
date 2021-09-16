@@ -59,6 +59,10 @@ const userSchema = mongoose.Schema({
   allPoint: {
     type: Number,
     default: 0,
+  },
+  updatingTeamName: {
+    type: Boolean,
+    default: false
   }
 }, {
   versionKey: false,

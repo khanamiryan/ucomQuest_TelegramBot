@@ -1,8 +1,19 @@
-const {getUserByCode, updateUser} = require("../api/user/user");
+const {getUserByCode, updateUser, getUserById} = require("../api/user/user");
 const {getLocationDataById} = require("../api/location/location");
 const {saveFile} = require("../api/file/file");
 const {getGameById} = require("../api/game/game");
 const onText = async (ctx) => {
+  const userData = await getUserById(ctx.from.id)
+  if (userData.updatingTeamName && ctx.message && ctx.message.text) {
+    await updateUser({id: ctx.state.user.id, data: {
+        updatingTeamName: false,
+        teamName: ctx.message.text
+      }})
+    await ctx.reply(`Ձեր թիմի անունն է <b>${ctx.message.text}</b>`, {
+      parse_mode: 'html'
+    })
+    return false
+  }
   const [code, text] = ctx.message && ctx.message.text.split(':')
   const user = code ? await getUserByCode(code) : null;
   if (user && text && ctx.state.role === 'admin') {
