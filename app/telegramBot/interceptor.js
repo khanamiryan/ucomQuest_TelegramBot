@@ -117,6 +117,7 @@ const cancelGame = async ({player, ctx}) => {
 <b>Team Name</b>: <i>${player.teamName}</i>`, {parse_mode: 'HTML'})
   await ctx.telegram.sendMessage(player.id, `Ձեր Խաղը չեղարկվել է`, {parse_mode: 'HTML'})
   await showGameMenu(player.id)
+  await playerInfoForAdmin({player, ctx})
 }
 const stopChatting = async ({user, ctx}) => {
   await updateUser({
@@ -159,7 +160,6 @@ const addPoint = async ({player, command, ctx}) => {
   }
   await checkUserGameStatus(player.id)
   await playerInfoForAdmin({player, ctx})
-
 }
 
 const playerInfoForAdmin = async ({player, ctx}) => {
