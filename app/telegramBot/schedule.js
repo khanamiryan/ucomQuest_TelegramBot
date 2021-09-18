@@ -49,7 +49,7 @@ const scheduleFunction = async (bot) => {
       const [player] = await getUserInfo(playersLocation.code)
       await bot.telegram.sendMessage(player.chatTo,
         `<b>Location</b>
-Time will end in 5 minutes
+Time will end in ${+process.env.notificationTimeInMinutes} minutes
 <b>Location Name</b>: <i>${locationData.name}</i>
 <b>code</b>: <i>${player.code}</i>
 <b>Team Name</b>: <i>${player.teamName}</i>
@@ -66,7 +66,7 @@ Time will end in 5 minutes
       const locationData = await getLocationDataById(player.playingLocationId)
       await bot.telegram.sendMessage(player.chatTo,
         `<B>Game</B>
-Time will end in 5 minutes
+Time will end in ${+process.env.notificationTimeInMinutes} minutes
 <b>Location Name</b>: <i>${locationData.name}</i>
 <b>code</b>: <i>${player.code}</i>
 <b>Team Name</b>: <i>${player.teamName}</i>

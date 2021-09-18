@@ -3,7 +3,7 @@ const schedule = require('node-schedule')
 const bot = new Telegraf(process.env.botToken, {
   polling: true,
 });
-const {showGameMenu, gameTo, showPoints, sendWelcomeMessage, editTeamName} = require('./game')
+const {showGameMenu, gameTo, showInfo, sendWelcomeMessage} = require('./game')
 const interceptor = require('./interceptor')
 const {menuMiddleware: admin, adminPage} = require('./admin')
 const {onText, onPhoto, onVideo, actionTextTo, onContact, onLocation, onFile, onlyForward} = require("./playerOnData");
@@ -27,7 +27,8 @@ bot.command('admin', async ctx => adminPage(ctx))
 // bot.command('name', async ctx => editTeamName(ctx))
 bot.command('game', async ctx => showGameMenu(ctx.state.userId)) // open Games Menu
 bot.command('start', async ctx => sendWelcomeMessage(ctx)) // open Games Menu
-bot.command('points', async ctx => showPoints(ctx)) // open Games Menu
+bot.command('points', async ctx => showInfo(ctx)) // open Games Menu
+bot.command('info', async ctx => showInfo(ctx)) // open Games Menu
 bot.action(/^gTo/, async (ctx) => gameTo(ctx)) // gameTo
 
 bot.on('text', async (ctx) => onText(ctx))
@@ -46,8 +47,8 @@ bot.use(async (ctx, next) => {
 })
 
 
-schedule.scheduleJob('* * * * *', () => {
-  scheduleFunction(bot)
+schedule.scheduleJob('*/10 * * * * *', () => {
+  // scheduleFunction(bot).then()
 })
 
 

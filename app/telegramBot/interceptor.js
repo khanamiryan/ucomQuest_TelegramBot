@@ -1,6 +1,6 @@
 const Users = require("../api/user/user.schema");
 const { getUserById, updateUser, getUserByVerificationCode, getUserInfo } = require("../api/user/user");
-const { showGameMenu, checkUserGameStatus} = require("./game");
+const { showGameMenu, checkUserGameStatus, getPlayerGameAndLocationTimes} = require("./game");
 
 const myCommands = {
   stop: 'chatting is stop',
@@ -165,13 +165,16 @@ const addPoint = async ({player, command, ctx}) => {
 const playerInfoForAdmin = async ({player, ctx}) => {
   if (player && player._id) {
     const user = await getUserById(player.id)
+    const userTimes = await getPlayerGameAndLocationTimes(player.id)
     await ctx.reply(`
 <b>code</b>: <i>${user.code}</i>
 <b>Team Name</b>: <i>${user.teamName}</i>
 <b>Team location ponit</b>: <i>${user.locationPoint}</i>
 <b>Team all ponit</b>: <i>${user.allPoint}</i>
 <b>location</b>: <i>${user.locationData && user.locationData.name || "doesn't exist"}</i>
+<b>locationTime</b>: <i>${userTimes.locationTime}</i>
 <b>game</b>: <i>${user.gameData && user.gameData.name || "doesn't exist"}</i>
+<b>gameTime</b>: <i>${userTimes.gameTime}</i>
 <b>gameLocation</b>: <i>${user.playingGameData && user.playingGameData.location || "doesn't exist"}</i>
           `, {
       parse_mode: 'html'

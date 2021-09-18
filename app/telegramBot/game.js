@@ -304,21 +304,42 @@ const reject = async({ ctx, text }) => {
     await ctx.telegram.sendMessage(userId, 'Ձեր ուղարկված նկարն անվավեր է ճանաչվել մեր ադմինների կողմից։ Խնդրում ենք նորից փորձել։')
 }
 
-const showPoints = async(ctx) => {
+const showInfo = async(ctx) => {
     const { user } = await ctx.state
-    if (!user.locationPoint && !user.allPoint) {
-        await ctx.reply(
-          `Սիրելի <b>${user.teamName}</b> թիմ, դուք դեռ չունեք միավորներ`, {
-              parse_mode: 'HTML'
-          }
-        )
-    } else {
-        await ctx.reply(
-          `Սիրելի <b>${user.teamName}</b> թիմ, դուք ունեք <i>${user.locationPoint + user.allPoint}</i> միավոր`, {
-              parse_mode: 'HTML'
-          }
-        )
+    const timesInfo = await getPlayerGameAndLocationTimes(user.id)
+    if (user.role === 'admin') {
+        await bot.telegram.sendMessage(user.id, 'you are Admin')
+        return false
     }
+    const teamNameText = `Սիրելի <b>${user.teamName}</b> թիմ,`
+    const pointText = !user.locationPoint && !user.allPoint ? `դուք դեռ չունեք միավորներ` : `դուք ունեք <b><i>${user.locationPoint + user.allPoint}</i></b> միավոր`
+    const locationText = timesInfo.locationTime === 'noTime' ?
+      false : timesInfo.locationTime < 1 ?
+        `Տարածքի Խաղերը ավարտելու համար ձեզ ժամանակ չի մնացել` : `Տարածքի Խաղերը ավարտելու համար ձեզ մնացել է <b><i>${timesInfo.locationTime}</i></b> րոպե`
+    const gameText = timesInfo.gameTime === 'noTime' ?
+      false : timesInfo.gameTime < 1 ?
+        `Տարածքի Խաղերը ավարտելու համար ձեզ ժամանակ չի մնացել` : `Խաղը ավարտելու համար ձեզ մնացել է <b><i>${timesInfo.gameTime}</i></b> րոպե`
+
+    await ctx.reply(`${teamNameText}${pointText}
+${locationText ? locationText : ''}
+${gameText ? gameText : ''}
+`, {
+          parse_mode: 'HTML'
+      }
+    )
+    // if (!user.locationPoint && !user.allPoint) {
+    //     await ctx.reply(
+    //       `Սիրելի <b>${user.teamName}</b> թիմ, դուք դեռ չունեք միավորներ`, {
+    //           parse_mode: 'HTML'
+    //       }
+    //     )
+    // } else {
+    //     await ctx.reply(
+    //       `Սիրելի <b>${user.teamName}</b> թիմ, դուք ունեք <i>${user.locationPoint + user.allPoint}</i> միավոր`, {
+    //           parse_mode: 'HTML'
+    //       }
+    //     )
+    // }
 }
 
 
@@ -366,6 +387,17 @@ const checkUserGameStatus = async (userId, showGameMenuParam = true) => {
         showGameMenuParam && await showGameMenu(userId)
     }
 }
+
+const getPlayerGameAndLocationTimes = async (userId) => {
+    const user = await getUserById(userId)
+    const gameTime = user.playingGameTime ? -1 * moment().diff(user.playingGameTime, 'minute') : 'noTime'
+    const locationTime = user.playingLocationTime ? -1 * moment().diff(user.playingLocationTime, 'minute') : 'noTime'
+    return {
+        gameTime,
+        locationTime,
+    }
+}
+
 const gameTo = async(ctx) => {
     const [, text] = ctx.update.callback_query.data.split(':')
     const [command] = text.split('/')
@@ -396,10 +428,11 @@ const gameTo = async(ctx) => {
 }
 
 module.exports = {
+    getPlayerGameAndLocationTimes,
     checkUserGameStatus,
     showGameMenu,
     editTeamName,
     gameTo,
-    showPoints,
+    showInfo,
     sendWelcomeMessage
 }
