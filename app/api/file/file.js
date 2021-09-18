@@ -29,14 +29,16 @@ const saveFile = async (data) => {
   if (!fs.existsSync(dir)){
     fs.mkdirSync(dir);
   }
-  const file = fs.createWriteStream(fileName);
-  await http.get(data.fileHref, (response) => {
-    response.pipe(file);
-  }).on('error', function(err) { // Handle errors
-    fs.unlink(fileName); // Delete the file async. (But we don't check the result)
-  });
-  const newFile = new File(data);
-  return await newFile.save()
+  if (data.fileHref) {
+    const file = fs.createWriteStream(fileName);
+    await http.get(data.fileHref, (response) => {
+      response.pipe(file);
+    }).on('error', function (err) { // Handle errors
+      fs.unlink(fileName); // Delete the file async. (But we don't check the result)
+    });
+    const newFile = new File(data);
+    return await newFile.save()
+  }
 }
 const getFile = (filename) => {
   const filePath = `../../../uploads/${filename}`
