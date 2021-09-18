@@ -361,6 +361,20 @@ const editTeamName = async (ctx) => {
     })
 }
 
+const checkUserGameStatus = async (userId) => {
+    const user = await getUserById(userId)
+    const locationData = await getLocationDataById(user.playingLocationId)
+    const playStatus = user.locationPoint < locationData.finishPoint ? 'playingGame' : 'playingLevelUp'
+    if(user.playStatus === 'playingGame' && playStatus === 'playingLevelUp') {
+        await updateUser({
+            id: userId,
+            data: {
+                playStatus,
+            }
+        })
+        await showGameMenu(userId)
+    }
+}
 const gameTo = async(ctx) => {
     const [, text] = ctx.update.callback_query.data.split(':')
     const [command] = text.split('/')
@@ -388,21 +402,6 @@ const gameTo = async(ctx) => {
             break;
     }
     return false
-}
-
-const checkUserGameStatus = async (userId) => {
-    const user = await getUserById(userId)
-    const locationData = await getLocationDataById(user.playingLocationId)
-    const playStatus = user.locationPoint < locationData.finishPoint ? 'playingGame' : 'playingLevelUp'
-    if(user.playStatus === 'playingGame' && playStatus === 'playingLevelUp') {
-        await updateUser({
-            id: userId,
-            data: {
-                playStatus,
-            }
-        })
-        await showGameMenu(userId)
-    }
 }
 
 module.exports = {
