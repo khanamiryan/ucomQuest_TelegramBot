@@ -1,6 +1,6 @@
 const Users = require("../api/user/user.schema");
 const { getUserById, updateUser, getUserByVerificationCode, getUserInfo } = require("../api/user/user");
-const { showGameMenu } = require("./game");
+const { showGameMenu, checkUserGameStatus} = require("./game");
 
 const myCommands = {
   stop: 'chatting is stop',
@@ -71,7 +71,7 @@ const interceptor = async(ctx, next) => {
       if (player && player.id) {
         switch (code.trim()) {
           case 'cancelGame':
-            player.id && await updateUser({
+            await updateUser({
               id: player.id,
               data: {
                 playingGameId: undefined,
@@ -85,7 +85,7 @@ const interceptor = async(ctx, next) => {
             await showGameMenu(player.id)
             break
           case 'point':
-            player.id && await updateUser({
+            await updateUser({
               id: player.id,
               data: {
                 $inc: {
@@ -102,6 +102,8 @@ const interceptor = async(ctx, next) => {
             } else {
               await ctx.telegram.sendMessage(player.id, `Ձեր թիմից պակասեցվեց <b>${command}</b> միավոր`, {parse_mode: 'HTML'})
             }
+            await checkUserGameStatus(player.id)
+            await playerInfoForAdmin({player, ctx})
             break
           case 'removePlayerInfo':
             await Users.updateOne({id: player.id}, { $unset: { id: ""} });
@@ -109,7 +111,7 @@ const interceptor = async(ctx, next) => {
             await ctx.reply(`${player.teamName} info was removed`, {parse_mode: 'HTML'})
             break;
           case 'name':
-            player.id && await updateUser({
+            await updateUser({
               id: player.id,
               data: {
                 teamName: command,
@@ -130,24 +132,7 @@ const interceptor = async(ctx, next) => {
             await ctx.reply('Chatting is stop')
             break
           case 'player':
-            if (player && player._id) {
-              await ctx.reply(`
-<b>code</b>: <i>${player.code}</i>
-<b>Team Name</b>: <i>${player.teamName}</i>
-<b>Team location ponit</b>: <i>${player.locationPoint}</i>
-<b>Team all ponit</b>: <i>${player.allPoint}</i>
-<b>location</b>: <i>${player.locationData && player.locationData.name || "doesn't exist"}</i>
-<b>game</b>: <i>${player.gameData && player.gameData.name || "doesn't exist"}</i>
-<b>gameLocation</b>: <i>${player.playingGameData && player.playingGameData.location || "doesn't exist"}</i>
-          `, {
-                parse_mode: 'html'
-              })
-              if (player.playingGameData && player.playingGameData.location) {
-                await ctx.replyWithLocation(...player.playingGameData.location.split(', '))
-              }
-            } else {
-              await ctx.reply(`this "<b>${text.trim()}</b>" player not found`, {parse_mode: 'HTML'})
-            }
+            await playerInfoForAdmin({player, ctx})
             break
         }
       } else {
@@ -158,6 +143,27 @@ const interceptor = async(ctx, next) => {
     return next()
   } catch (e) {
     console.log(e);
+  }
+}
+
+const playerInfoForAdmin = async ({player, ctx}) => {
+  if (player && player._id) {
+    await ctx.reply(`
+<b>code</b>: <i>${player.code}</i>
+<b>Team Name</b>: <i>${player.teamName}</i>
+<b>Team location ponit</b>: <i>${player.locationPoint}</i>
+<b>Team all ponit</b>: <i>${player.allPoint}</i>
+<b>location</b>: <i>${player.locationData && player.locationData.name || "doesn't exist"}</i>
+<b>game</b>: <i>${player.gameData && player.gameData.name || "doesn't exist"}</i>
+<b>gameLocation</b>: <i>${player.playingGameData && player.playingGameData.location || "doesn't exist"}</i>
+          `, {
+      parse_mode: 'html'
+    })
+    if (player.playingGameData && player.playingGameData.location) {
+      await ctx.replyWithLocation(...player.playingGameData.location.split(', '))
+    }
+  } else {
+    await ctx.reply(`this "<b>${text.trim()}</b>" player not found`, {parse_mode: 'HTML'})
   }
 }
 

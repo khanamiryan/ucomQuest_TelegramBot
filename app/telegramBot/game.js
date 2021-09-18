@@ -168,8 +168,7 @@ const showGameMenu = async(userId) => {
             const userGames = await Users.aggregate([
                 { $match: { id: userId } },
             ])
-            const locationData = await getLocationDataById(user.playingLocationId)
-            const gameType = user.locationPoint < locationData.finishPoint ? 'standardGame' : 'levelUp'
+            const gameType = user.playStatus === 'playingGame' ? 'standardGame' : 'levelUp'
             const games = await Game.aggregate([
                 { $match: { locationId: user.playingLocationId } },
                 {
@@ -200,12 +199,6 @@ const showGameMenu = async(userId) => {
             const gameButtons = [];
             while (gameButtonsArray.length) gameButtons.push(gameButtonsArray.splice(0, +process.env.buttonCountInRow));
             if (gameType === 'levelUp') {
-                await updateUser({
-                    id: userId,
-                    data: {
-                        playStatus: 'playingLevelUp',
-                    }
-                })
                 await bot.telegram.sendMessage(userId, `Դուք հավաքեցիք բավականաչափ միավոր <b>Level Up</b> խաղալու համար`, {
                     parse_mode: 'HTML'
                 }).then(async(e) => {
@@ -240,9 +233,12 @@ const approveGame = async({ ctx, text }) => {
                 nowPlaying: -1
             }
         })
+        const locationData = await getLocationDataById(userData.playingLocationId)
+        const playStatus = userData.locationPoint < locationData.finishPoint ? 'playingGame' : 'playingLevelUp'
         await updateUser({
             id: userId,
             data: {
+                playStatus,
                 playingGameId: undefined,
                 $unset: { playingGameTime: "" },
                 $inc: {
@@ -394,7 +390,23 @@ const gameTo = async(ctx) => {
     return false
 }
 
+const checkUserGameStatus = async (userId) => {
+    const user = await getUserById(userId)
+    const locationData = await getLocationDataById(user.playingLocationId)
+    const playStatus = user.locationPoint < locationData.finishPoint ? 'playingGame' : 'playingLevelUp'
+    if(user.playStatus === 'playingGame' && playStatus === 'playingLevelUp') {
+        await updateUser({
+            id: userId,
+            data: {
+                playStatus,
+            }
+        })
+        await showGameMenu(userId)
+    }
+}
+
 module.exports = {
+    checkUserGameStatus,
     showGameMenu,
     editTeamName,
     gameTo,

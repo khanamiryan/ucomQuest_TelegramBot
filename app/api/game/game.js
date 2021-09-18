@@ -2,9 +2,6 @@ const express = require('express');
 const Games = require('./game.schema')
 const router = express.Router()
 const multer  = require('multer')
-const path = require("path");
-const fs = require("fs");
-const {getFile, getFileType} = require("../file/file");
 const storageConfig = multer.diskStorage({
   destination: (req, file, cb) =>{
     cb(null, "uploads");
