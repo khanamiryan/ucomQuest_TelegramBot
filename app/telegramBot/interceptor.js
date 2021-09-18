@@ -71,65 +71,19 @@ const interceptor = async(ctx, next) => {
       if (player && player.id) {
         switch (code.trim()) {
           case 'cancelGame':
-            await updateUser({
-              id: player.id,
-              data: {
-                playingGameId: undefined,
-                $unset: {playingGameTime: ""},
-              }
-            })
-            await ctx.reply(
-              `<b>Game canceled</b>
-<b>Team Name</b>: <i>${player.teamName}</i>`, {parse_mode: 'HTML'})
-            await ctx.telegram.sendMessage(player.id, `Ձեր Խաղը չեղարկվել է`, {parse_mode: 'HTML'})
-            await showGameMenu(player.id)
+            await cancelGame({player, ctx})
             break
           case 'point':
-            await updateUser({
-              id: player.id,
-              data: {
-                $inc: {
-                  locationPoint: command
-                },
-              }
-            })
-            await ctx.reply(
-              `<b>Point added</b>
-<b>Team Name</b>: <i>${player.teamName}</i>
-<b>Point</b>: <i>${command}</i>`, {parse_mode: 'HTML'})
-            if (command > 0) {
-              await ctx.telegram.sendMessage(player.id, `Ձեր թիմին ավելացվեց <b>${command}</b> միավոր`, {parse_mode: 'HTML'})
-            } else {
-              await ctx.telegram.sendMessage(player.id, `Ձեր թիմից պակասեցվեց <b>${command}</b> միավոր`, {parse_mode: 'HTML'})
-            }
-            await checkUserGameStatus(player.id)
-            await playerInfoForAdmin({player, ctx})
+            await addPoint({player, ctx, command})
             break
           case 'removePlayerInfo':
-            await Users.updateOne({id: player.id}, { $unset: { id: ""} });
-            await ctx.telegram.sendMessage(player.id, `Դուք հեռացված եք խաղից`, {parse_mode: 'HTML'})
-            await ctx.reply(`${player.teamName} info was removed`, {parse_mode: 'HTML'})
+            await removePlayerInfo({player, ctx})
             break;
           case 'name':
-            await updateUser({
-              id: player.id,
-              data: {
-                teamName: command,
-              }
-            })
-            await ctx.reply(
-              `<b>Team name is edited</b>
-<i>${command}</i>`, {parse_mode: 'HTML'})
-            await ctx.telegram.sendMessage(player.id, `Ձեր թիմի անունն է՝ <b>${command}</b>`, {parse_mode: 'HTML'})
+            await updateName({player, ctx, command})
             break
           case 'stop':
-            await updateUser({
-              id: user.id,
-              data: {
-                chatTo: null
-              }
-            })
-            await ctx.reply('Chatting is stop')
+            await stopChatting({user, ctx})
             break
           case 'player':
             await playerInfoForAdmin({player, ctx})
@@ -144,6 +98,68 @@ const interceptor = async(ctx, next) => {
   } catch (e) {
     console.log(e);
   }
+}
+const removePlayerInfo = async ({player, ctx}) => {
+  await Users.updateOne({id: player.id}, { $unset: { id: ""} });
+  await ctx.telegram.sendMessage(player.id, `Դուք հեռացված եք խաղից`, {parse_mode: 'HTML'})
+  await ctx.reply(`${player.teamName} info was removed`, {parse_mode: 'HTML'})
+}
+const cancelGame = async ({player, ctx}) => {
+  await updateUser({
+    id: player.id,
+    data: {
+      playingGameId: undefined,
+      $unset: {playingGameTime: ""},
+    }
+  })
+  await ctx.reply(
+    `<b>Game canceled</b>
+<b>Team Name</b>: <i>${player.teamName}</i>`, {parse_mode: 'HTML'})
+  await ctx.telegram.sendMessage(player.id, `Ձեր Խաղը չեղարկվել է`, {parse_mode: 'HTML'})
+  await showGameMenu(player.id)
+}
+const stopChatting = async ({user, ctx}) => {
+  await updateUser({
+    id: user.id,
+    data: {
+      chatTo: null
+    }
+  })
+  await ctx.reply('Chatting is stop')
+}
+const updateName = async ({player, ctx, command}) => {
+  await updateUser({
+    id: player.id,
+    data: {
+      teamName: command,
+    }
+  })
+  await ctx.reply(
+    `<b>Team name is edited</b>
+<i>${command}</i>`, {parse_mode: 'HTML'})
+  await ctx.telegram.sendMessage(player.id, `Ձեր թիմի անունն է՝ <b>${command}</b>`, {parse_mode: 'HTML'})
+}
+const addPoint = async ({player, command, ctx}) => {
+  await updateUser({
+    id: player.id,
+    data: {
+      $inc: {
+        locationPoint: command
+      },
+    }
+  })
+  await ctx.reply(
+    `<b>Point added</b>
+<b>Team Name</b>: <i>${player.teamName}</i>
+<b>Point</b>: <i>${command}</i>`, {parse_mode: 'HTML'})
+  if (command > 0) {
+    await ctx.telegram.sendMessage(player.id, `Ձեր թիմին ավելացվեց <b>${command}</b> միավոր`, {parse_mode: 'HTML'})
+  } else {
+    await ctx.telegram.sendMessage(player.id, `Ձեր թիմից պակասեցվեց <b>${command}</b> միավոր`, {parse_mode: 'HTML'})
+  }
+  await checkUserGameStatus(player.id)
+  await playerInfoForAdmin({player, ctx})
+
 }
 
 const playerInfoForAdmin = async ({player, ctx}) => {

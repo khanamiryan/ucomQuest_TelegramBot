@@ -151,6 +151,7 @@ ${gameData.fullDescription}`, {
 // Game Menu
 const showGameMenu = async(userId) => {
     try {
+        await checkUserGameStatus(userId, false)
         const user = await getUserById(userId)
         await deleteMessagesFunction(userId)
         if (user.role === 'admin') {
@@ -198,16 +199,6 @@ const showGameMenu = async(userId) => {
             }
             const gameButtons = [];
             while (gameButtonsArray.length) gameButtons.push(gameButtonsArray.splice(0, +process.env.buttonCountInRow));
-            if (gameType === 'levelUp') {
-                await bot.telegram.sendMessage(userId, `Դուք հավաքեցիք բավականաչափ միավոր <b>Level Up</b> խաղալու համար`, {
-                    parse_mode: 'HTML'
-                }).then(async(e) => {
-                    await newMessage({
-                        messageId: e.message_id,
-                        userId,
-                    })
-                });
-            }
             await bot.telegram.sendMessage(userId, `Խաղերը`, { reply_markup: JSON.stringify({ inline_keyboard: gameButtons }) }).then(async(e) => {
                 await newMessage({
                     messageId: e.message_id,
@@ -233,12 +224,9 @@ const approveGame = async({ ctx, text }) => {
                 nowPlaying: -1
             }
         })
-        const locationData = await getLocationDataById(userData.playingLocationId)
-        const playStatus = userData.locationPoint < locationData.finishPoint ? 'playingGame' : 'playingLevelUp'
         await updateUser({
             id: userId,
             data: {
-                playStatus,
                 playingGameId: undefined,
                 $unset: { playingGameTime: "" },
                 $inc: {
@@ -280,7 +268,7 @@ const approveGame = async({ ctx, text }) => {
             })
         }
     }
-    await bot.telegram.sendMessage(userId, 'Դուք ավարտեցիք Խաղը')
+    // await bot.telegram.sendMessage(userId, 'Դուք ավարտեցիք Խաղը')
     await showGameMenu(userId)
 }
 const rejectGame = async({ ctx, text }) => {
@@ -361,7 +349,7 @@ const editTeamName = async (ctx) => {
     })
 }
 
-const checkUserGameStatus = async (userId) => {
+const checkUserGameStatus = async (userId, showGameMenuParam = true) => {
     const user = await getUserById(userId)
     const locationData = await getLocationDataById(user.playingLocationId)
     const playStatus = user.locationPoint < locationData.finishPoint ? 'playingGame' : 'playingLevelUp'
@@ -372,7 +360,10 @@ const checkUserGameStatus = async (userId) => {
                 playStatus,
             }
         })
-        await showGameMenu(userId)
+        await bot.telegram.sendMessage(userId, `Դուք հավաքեցիք բավականաչափ միավոր <b>Level Up</b> խաղալու համար`, {
+            parse_mode: 'HTML'
+        })
+        showGameMenuParam && await showGameMenu(userId)
     }
 }
 const gameTo = async(ctx) => {
