@@ -47,8 +47,9 @@ bot.use(async (ctx, next) => {
 })
 
 
-schedule.scheduleJob('*/10 * * * * *', () => {
-  // scheduleFunction(bot).then()
+schedule.scheduleJob('* * * * *', () => {
+  // schedule.scheduleJob('*/10 * * * * *', () => {
+  scheduleFunction(bot).then()
 })
 
 

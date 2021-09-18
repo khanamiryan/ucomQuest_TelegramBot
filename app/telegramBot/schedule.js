@@ -1,4 +1,4 @@
-const {userAggregate, getUserInfo} = require("../api/user/user");
+const {userAggregate, getUserInfo, getUserById, updateUser} = require("../api/user/user");
 const moment = require("moment");
 const {getLocationDataById} = require("../api/location/location");
 const scheduleFunction = async (bot) => {
@@ -62,11 +62,14 @@ Time will end in ${+process.env.notificationTimeInMinutes} minutes
   }
   if (playersGameTime.length) {
     for(const playersGame of playersGameTime) {
-      const [player] = await getUserInfo(playersGame.code)
+      const player = await getUserById(playersGame.id)
       const locationData = await getLocationDataById(player.playingLocationId)
+      await bot.telegram.sendMessage(player.id, `Խաղը ավարտելու համար ձեզ մնացել է <b>${process.env.notificationTimeInMinutes}</b> րոպե`, {
+        parse_mode: 'html'
+      })
       await bot.telegram.sendMessage(player.chatTo,
         `<B>Game</B>
-Time will end in ${+process.env.notificationTimeInMinutes} minutes
+Time will end in ${process.env.notificationTimeInMinutes} minutes
 <b>Location Name</b>: <i>${locationData.name}</i>
 <b>code</b>: <i>${player.code}</i>
 <b>Team Name</b>: <i>${player.teamName}</i>

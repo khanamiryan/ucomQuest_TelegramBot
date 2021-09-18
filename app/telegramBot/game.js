@@ -39,111 +39,132 @@ const deleteMessagesFunction = async(userId) => {
 }
 
 const showGame = async({ ctx, text }) => {
-    const [, locationGameText] = text.split('/')
-    const [, locationGameId] = locationGameText.split('=')
-    const gameData = await Game.findById(locationGameId)
     await deleteMessagesFunction(ctx.state.userId)
-    if (gameData.location) {
-        const deleteMessage = await ctx.replyWithLocation(...gameData.location.split(', '))
-        await newMessage({
-            messageId: deleteMessage.message_id,
-            userId: ctx.state.userId,
+    const gameStatus = await checkUserGameStatus(ctx.state.userId)
+    if (gameStatus) {
+        const [, locationGameText] = text.split('/')
+        const [, locationGameId] = locationGameText.split('=')
+        const gameData = await Game.findById(locationGameId)
+        if(gameData.nowPlaying >= gameData.maxPlayerCount) {
+            await ctx.reply(`Այս խաղում ազատ տեղեր չեն մնացել`, {
+                parse_mode: 'HTML'
+            })
+            await showGameMenu(ctx.state.userId)
+            return false
+        }
+        if (gameData.location) {
+            const deleteMessage = await ctx.replyWithLocation(...gameData.location.split(', '))
+            await newMessage({
+                messageId: deleteMessage.message_id,
+                userId: ctx.state.userId,
+            })
+        }
+        const gameButtons = [
+            [{text: `Սկսել խաղը`, callback_data: `gTo:pG/lGId=${locationGameId}`}, // pG = playGame, gTo = gameTo, lGId = locationGameId,
+                {text: `🔙 գնալ հետ ↩`, callback_data: `gTo:gM/lGId=${locationGameId}`}
+            ] // gM = gameMenu, gTo = gameTo
+        ];
+        await ctx.reply(`<b>${gameData.name}</b>: <i>${gameData.point}</i>`, {
+            parse_mode: 'HTML'
+        }).then(async (e) => {
+            await newMessage({
+                messageId: e.message_id,
+                userId: ctx.state.userId,
+            })
+        })
+        await ctx.reply(`${gameData.description}
+Ժամանակը՝ ${gameData.gamePlayTime} րոպե`, {reply_markup: JSON.stringify({inline_keyboard: gameButtons})}).then(async (e) => {
+            await newMessage({
+                messageId: e.message_id,
+                userId: ctx.state.userId,
+            })
         })
     }
-    const gameButtons = [
-        [{ text: `Սկսել խաղը`, callback_data: `gTo:pG/lGId=${locationGameId}` }, // pG = playGame, gTo = gameTo, lGId = locationGameId,
-            { text: `🔙 գնալ հետ ↩`, callback_data: `gTo:gM/lGId=${locationGameId}` }
-        ] // gM = gameMenu, gTo = gameTo
-    ];
-    await ctx.reply(`<b>${gameData.name}</b>: <i>${gameData.point}</i>`, {
-        parse_mode: 'HTML'
-    }).then(async(e) => {
-        await newMessage({
-            messageId: e.message_id,
-            userId: ctx.state.userId,
-        })
-    })
-    await ctx.reply(gameData.description, { reply_markup: JSON.stringify({ inline_keyboard: gameButtons }) }).then(async(e) => {
-        await newMessage({
-            messageId: e.message_id,
-            userId: ctx.state.userId,
-        })
-    })
 }
 const playGame = async({ ctx, text }) => {
+    const gameStatus = await checkUserGameStatus(ctx.state.userId)
     ctx.deleteMessage().catch(err => {
         console.log(err)
     })
-    const [, locationGame] = text.split('/')
-    const [, locationGameId] = locationGame.split('=')
-    const gameData = await Game.findById(locationGameId)
-    await updateGame({ _id: gameData._id }, {
-        $inc: {
-            nowPlaying: +1
+    if (gameStatus) {
+        const [, locationGame] = text.split('/')
+        const [, locationGameId] = locationGame.split('=')
+        const gameData = await Game.findById(locationGameId)
+        if(gameData.nowPlaying >= gameData.maxPlayerCount) {
+            await ctx.reply(`Այս խաղում ազատ տեղեր չեն մնացել`, {
+                parse_mode: 'HTML'
+            })
+            await showGameMenu(ctx.state.userId)
+            return false
         }
-    })
-    await Users.updateOne({ id: ctx.state.userId }, {
-        playingGameId: gameData._id,
-        $push: { "playedGames": gameData.gameCode },
-        playingGameTime: moment().add(gameData.gamePlayTime, 'minutes')
-    })
-    await ctx.reply(
-      `<b>Այժմ դուք խաղում եք <i>${gameData.name}</i> խաղը</b>
+        await updateGame({_id: gameData._id}, {
+            $inc: {
+                nowPlaying: +1
+            }
+        })
+        await Users.updateOne({id: ctx.state.userId}, {
+            playingGameId: gameData._id,
+            $push: {"playedGames": gameData.gameCode},
+            playingGameTime: moment().add(gameData.gamePlayTime, 'minutes')
+        })
+        await ctx.reply(
+          `<b>Այժմ դուք խաղում եք <i>${gameData.name}</i> խաղը</b>
 ${gameData.fullDescription}`, {
-          parse_mode: 'html'
-      })
-    if (gameData.fileName) {
-        const message = await ctx.reply(
-          `<i>Uploading file ...</i>`, {
               parse_mode: 'html'
           })
-        try {
-            const type = await getFileType(gameData.fileName)
-            const buffer = getFile(gameData.fileName)
-            switch (type.mime.split('/')[0]) {
-                case 'image':
-                    await ctx.replyWithPhoto({ source: buffer, filename: gameData.fileName }).then(async(e) => {
-                        await bot.telegram.deleteMessage(ctx.state.user.id, message.message_id).then().catch(async(err) => {
-                            console.log(2222, err);
-                            await Messages.updateMany({
-                                userId: ctx.state.user.id,
-                                messagesType: 'delete'
-                            }, {
-                                status: 'deleted'
+        if (gameData.fileName) {
+            const message = await ctx.reply(
+              `<i>Uploading file ...</i>`, {
+                  parse_mode: 'html'
+              })
+            try {
+                const type = await getFileType(gameData.fileName)
+                const buffer = getFile(gameData.fileName)
+                switch (type.mime.split('/')[0]) {
+                    case 'image':
+                        await ctx.replyWithPhoto({source: buffer, filename: gameData.fileName}).then(async (e) => {
+                            await bot.telegram.deleteMessage(ctx.state.user.id, message.message_id).then().catch(async (err) => {
+                                console.log(2222, err);
+                                await Messages.updateMany({
+                                    userId: ctx.state.user.id,
+                                    messagesType: 'delete'
+                                }, {
+                                    status: 'deleted'
+                                })
                             })
                         })
-                    })
-                    break;
-                case 'video':
-                    await ctx.replyWithVideo({ source: buffer, filename: gameData.fileName }).then(async(e) => {
-                        await bot.telegram.deleteMessage(ctx.state.user.id, message.message_id).then().catch(async(err) => {
-                            console.log(2222, err);
-                            await Messages.updateMany({
-                                userId: ctx.state.user.id,
-                                messagesType: 'delete'
-                            }, {
-                                status: 'deleted'
+                        break;
+                    case 'video':
+                        await ctx.replyWithVideo({source: buffer, filename: gameData.fileName}).then(async (e) => {
+                            await bot.telegram.deleteMessage(ctx.state.user.id, message.message_id).then().catch(async (err) => {
+                                console.log(2222, err);
+                                await Messages.updateMany({
+                                    userId: ctx.state.user.id,
+                                    messagesType: 'delete'
+                                }, {
+                                    status: 'deleted'
+                                })
                             })
                         })
-                    })
-                    break;
-                default:
-                    await ctx.replyWithDocument({ source: buffer, filename: gameData.fileName }).then(async(e) => {
-                        await bot.telegram.deleteMessage(ctx.state.user.id, message.message_id).then().catch(async(err) => {
-                            console.log(2222, err);
-                            await Messages.updateMany({
-                                userId: ctx.state.user.id,
-                                messagesType: 'delete'
-                            }, {
-                                status: 'deleted'
+                        break;
+                    default:
+                        await ctx.replyWithDocument({source: buffer, filename: gameData.fileName}).then(async (e) => {
+                            await bot.telegram.deleteMessage(ctx.state.user.id, message.message_id).then().catch(async (err) => {
+                                console.log(2222, err);
+                                await Messages.updateMany({
+                                    userId: ctx.state.user.id,
+                                    messagesType: 'delete'
+                                }, {
+                                    status: 'deleted'
+                                })
                             })
                         })
-                    })
-                    break;
-            }
+                        break;
+                }
 
-        } catch (e) {
-            console.log('file error', e);
+            } catch (e) {
+                console.log('file error', e);
+            }
         }
     }
 }
@@ -250,7 +271,7 @@ const approveGame = async({ ctx, text }) => {
                     locationPoint: 0,
                     playStatus: 'goingLocation',
                     playingGameId: undefined,
-                    $unset: { playingLocationTime: "" },
+                    $unset: { playingLocationTime: "", playingGameTime: "" },
                 }
             })
             await ctx.telegram.sendMessage(userId, 'Շնորհավորում եմ դուք հաղթահարել եք այս տարածքի խաղերը։\nՀաջորդիվ ուղևորվեք...')
@@ -318,28 +339,15 @@ const showInfo = async(ctx) => {
         `Տարածքի Խաղերը ավարտելու համար ձեզ ժամանակ չի մնացել` : `Տարածքի Խաղերը ավարտելու համար ձեզ մնացել է <b><i>${timesInfo.locationTime}</i></b> րոպե`
     const gameText = timesInfo.gameTime === 'noTime' ?
       false : timesInfo.gameTime < 1 ?
-        `Տարածքի Խաղերը ավարտելու համար ձեզ ժամանակ չի մնացել` : `Խաղը ավարտելու համար ձեզ մնացել է <b><i>${timesInfo.gameTime}</i></b> րոպե`
+        `Խաղը ավարտելու համար ձեզ ժամանակ չի մնացել` : `Խաղը ավարտելու համար ձեզ մնացել է <b><i>${timesInfo.gameTime}</i></b> րոպե`
 
     await ctx.reply(`${teamNameText}${pointText}
 ${locationText ? locationText : ''}
-${gameText ? gameText : ''}
+${locationText && gameText ? gameText : ''}
 `, {
           parse_mode: 'HTML'
       }
     )
-    // if (!user.locationPoint && !user.allPoint) {
-    //     await ctx.reply(
-    //       `Սիրելի <b>${user.teamName}</b> թիմ, դուք դեռ չունեք միավորներ`, {
-    //           parse_mode: 'HTML'
-    //       }
-    //     )
-    // } else {
-    //     await ctx.reply(
-    //       `Սիրելի <b>${user.teamName}</b> թիմ, դուք ունեք <i>${user.locationPoint + user.allPoint}</i> միավոր`, {
-    //           parse_mode: 'HTML'
-    //       }
-    //     )
-    // }
 }
 
 
@@ -371,20 +379,40 @@ const editTeamName = async (ctx) => {
 }
 
 const checkUserGameStatus = async (userId, showGameMenuParam = true) => {
-    const user = await getUserById(userId)
-    const locationData = await getLocationDataById(user.playingLocationId)
-    const playStatus = user.locationPoint < locationData.finishPoint ? 'playingGame' : 'playingLevelUp'
-    if(user.playStatus === 'playingGame' && playStatus === 'playingLevelUp') {
-        await updateUser({
-            id: userId,
-            data: {
-                playStatus,
-            }
-        })
-        await bot.telegram.sendMessage(userId, `Դուք հավաքեցիք բավականաչափ միավոր <b>Level Up</b> խաղալու համար`, {
-            parse_mode: 'HTML'
-        })
-        showGameMenuParam && await showGameMenu(userId)
+    try {
+        const user = await getUserById(userId)
+        const locationData = await getLocationDataById(user.playingLocationId)
+        let playStatus = user.locationPoint < locationData.finishPoint ? 'playingGame' : 'playingLevelUp'
+        const times = await getPlayerGameAndLocationTimes(userId)
+        if (times.locationTime <= +process.env.notificationTimeInMinutes && user.playStatus === 'playingGame') {
+            await updateUser({
+                id: userId,
+                data: {
+                    playStatus: 'playingLevelUp',
+                }
+            })
+            await bot.telegram.sendMessage(userId, `Ձեր ժամանակն այս տարածքում սպառվել է, այժմ հերթը <b>Level Up</b> խաղինն է`, {
+                parse_mode: 'HTML'
+            })
+            showGameMenuParam && await showGameMenu(userId)
+            return false
+        }
+        if (user.playStatus === 'playingGame' && playStatus === 'playingLevelUp') {
+            await updateUser({
+                id: userId,
+                data: {
+                    playStatus,
+                }
+            })
+            await bot.telegram.sendMessage(userId, `Դուք հավաքեցիք բավականաչափ միավոր <b>Level Up</b> խաղալու համար`, {
+                parse_mode: 'HTML'
+            })
+            showGameMenuParam && await showGameMenu(userId)
+            return false
+        }
+        return true
+    } catch (e) {
+        console.log(2222, e);
     }
 }
 
@@ -399,32 +427,36 @@ const getPlayerGameAndLocationTimes = async (userId) => {
 }
 
 const gameTo = async(ctx) => {
-    const [, text] = ctx.update.callback_query.data.split(':')
-    const [command] = text.split('/')
-    switch (command) {
-        case 'gId':
-            await showGame({ ctx, text })
-            break;
-        case 'gM':
-            await showGameMenu(ctx.state.userId)
-            break;
-        case 'pG':
-            await playGame({ ctx, text })
-            break;
-        case 'appG':
-            await approveGame({ ctx, text })
-            break;
-        case 'rejG':
-            await rejectGame({ ctx, text })
-            break;
-        case 'appL':
-            await approveLocation({ ctx, text })
-            break;
-        case 'rejL':
-            await rejectLocation({ ctx, text })
-            break;
+    try {
+        const [, text] = ctx.update.callback_query.data.split(':')
+        const [command] = text.split('/')
+        switch (command) {
+            case 'gId':
+                await showGame({ctx, text})
+                break;
+            case 'gM':
+                await showGameMenu(ctx.state.userId)
+                break;
+            case 'pG':
+                await playGame({ctx, text})
+                break;
+            case 'appG':
+                await approveGame({ctx, text})
+                break;
+            case 'rejG':
+                await rejectGame({ctx, text})
+                break;
+            case 'appL':
+                await approveLocation({ctx, text})
+                break;
+            case 'rejL':
+                await rejectLocation({ctx, text})
+                break;
+        }
+        return false
+    } catch (e) {
+        console.log(2222, e);
     }
-    return false
 }
 
 module.exports = {

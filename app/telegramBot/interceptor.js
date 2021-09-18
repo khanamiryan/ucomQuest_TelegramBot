@@ -158,8 +158,8 @@ const addPoint = async ({player, command, ctx}) => {
   } else {
     await ctx.telegram.sendMessage(player.id, `Ձեր թիմից պակասեցվեց <b>${command}</b> միավոր`, {parse_mode: 'HTML'})
   }
-  await checkUserGameStatus(player.id)
   await playerInfoForAdmin({player, ctx})
+  await checkUserGameStatus(player.id)
 }
 
 const playerInfoForAdmin = async ({player, ctx}) => {
