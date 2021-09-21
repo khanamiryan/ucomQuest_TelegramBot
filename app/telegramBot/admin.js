@@ -34,6 +34,29 @@ const adminPage = async (ctx) => {
 menu.manualRow(createBackMainMenuButtons())
 const menuMiddleware = new MenuMiddleware('admin/', menu)
 
+const showAdminInfo = async (ctx) => {
+  if (ctx.state.role === 'admin') {
+    const text = `
+    *Admin commands*
+/help - open help menu
+/admin - show admin panel
+\`stop\` - stop chatting
+\`player: teamCode\` - playerInfo
+\`point: teamCode : point\` - add point to player
+\`locationPoint: teamCode : point\` - add location point to player
+\`name: teamCode : teamNewName\` - change player name
+\`cancelGame: teamCode\` - Cancel game
+\`teamCode : text\` - text to user
+`
+    ctx.reply(text, {
+      parse_mode: 'markdown'
+    })
+    return false
+  }
+}
+
 module.exports = {
   menuMiddleware,
-  adminPage}
+  adminPage,
+  showAdminInfo
+}

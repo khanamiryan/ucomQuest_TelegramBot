@@ -5,7 +5,7 @@ const bot = new Telegraf(process.env.botToken, {
 });
 const {showGameMenu, gameTo, showInfo, sendWelcomeMessage} = require('./game')
 const interceptor = require('./interceptor')
-const {menuMiddleware: admin, adminPage} = require('./admin')
+const {menuMiddleware: admin, adminPage, showAdminInfo} = require('./admin')
 const {onText, onPhoto, onVideo, actionTextTo, onContact, onLocation, onFile, onlyForward} = require("./playerOnData");
 const {scheduleFunction} = require("./schedule");
 
@@ -29,6 +29,7 @@ bot.command('game', async ctx => showGameMenu(ctx.state.userId)) // open Games M
 bot.command('start', async ctx => sendWelcomeMessage(ctx)) // open Games Menu
 bot.command('points', async ctx => showInfo(ctx)) // open Games Menu
 bot.command('info', async ctx => showInfo(ctx)) // open Games Menu
+bot.command('help', async ctx => showAdminInfo(ctx)) // open Games Menu
 bot.action(/^gTo/, async (ctx) => gameTo(ctx)) // gameTo
 
 bot.on('text', async (ctx) => onText(ctx))

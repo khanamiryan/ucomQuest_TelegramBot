@@ -6,10 +6,10 @@ const myCommands = {
   stop: 'chatting is stop',
   player: 'playerInfo',
   point: 'added point to player',
-  locationPoint: 'add Location Point',
-  cancelGame: 'player Games is canceled',
+  locationpoint: 'add Location Point',
+  cancelgame: 'player Games is canceled',
   name: 'team new Name',
-  removePlayerInfo: 'remove Player Info, for change user'
+  removeplayerinfo: 'remove Player Info, for change user'
 }
 
 
@@ -66,21 +66,22 @@ const interceptor = async(ctx, next) => {
       return false
     }
 
-    const [code, text, command] = ctx.message && ctx.message.text ? ctx.message.text.split(':') : []
-    if (code && ctx.state.role === 'admin' && myCommands[code.trim()]) {
+    const [getCode, text, command] = ctx.message && ctx.message.text ? ctx.message.text.split(':') : []
+    const code = getCode.trim().toLocaleLowerCase();
+    if (code && ctx.state.role === 'admin' && myCommands[code]) {
       const [player] = await getUserInfo((text || '').trim())
       if (player && player.id) {
-        switch (code.trim()) {
-          case 'cancelGame':
+        switch (code) {
+          case 'cancelgame':
             await cancelGame({player, ctx})
             break
           case 'point':
             await addPoint({player, ctx, command})
             break
-          case 'locationPoint':
+          case 'locationpoint':
             await addLocationPoint({player, ctx, command})
             break
-          case 'removePlayerInfo':
+          case 'removeplayerinfo':
             await removePlayerInfo({player, ctx})
             break;
           case 'name':
@@ -196,7 +197,7 @@ const playerInfoForAdmin = async ({player, ctx}) => {
 <b>code</b>: <i>${user.code}</i>
 <b>Team Name</b>: <i>${user.teamName}</i>
 <b>Team location ponit</b>: <i>${user.locationPoint}</i>
-<b>Team all ponit</b>: <i>${user.allPoint}</i>
+<b>Team all ponit</b>: <i>${user.allPoint + user.locationPoint}</i>
 <b>location</b>: <i>${user.locationData && user.locationData.name || "doesn't exist"}</i>
 <b>locationTime</b>: <i>${userTimes.locationTime}</i>
 <b>game</b>: <i>${user.gameData && user.gameData.name || "doesn't exist"}</i>
