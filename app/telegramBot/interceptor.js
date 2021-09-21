@@ -6,6 +6,7 @@ const myCommands = {
   stop: 'chatting is stop',
   player: 'playerInfo',
   point: 'added point to player',
+  locationPoint: 'add Location Point',
   cancelGame: 'player Games is canceled',
   name: 'team new Name',
   removePlayerInfo: 'remove Player Info, for change user'
@@ -76,6 +77,9 @@ const interceptor = async(ctx, next) => {
           case 'point':
             await addPoint({player, ctx, command})
             break
+          case 'locationPoint':
+            await addLocationPoint({player, ctx, command})
+            break
           case 'removePlayerInfo':
             await removePlayerInfo({player, ctx})
             break;
@@ -145,12 +149,34 @@ const addPoint = async ({player, command, ctx}) => {
     id: player.id,
     data: {
       $inc: {
-        locationPoint: command
+        allPoint: command
       },
     }
   })
   await ctx.reply(
     `<b>Point added</b>
+<b>Team Name</b>: <i>${player.teamName}</i>
+<b>Point</b>: <i>${command}</i>`, {parse_mode: 'HTML'})
+  if (command > 0) {
+    await ctx.telegram.sendMessage(player.id, `Ձեր թիմին ավելացվեց <b>${command}</b> միավոր`, {parse_mode: 'HTML'})
+  } else {
+    await ctx.telegram.sendMessage(player.id, `Ձեր թիմից պակասեցվեց <b>${command}</b> միավոր`, {parse_mode: 'HTML'})
+  }
+  await playerInfoForAdmin({player, ctx})
+  await checkUserGameStatus(player.id)
+}
+
+const addLocationPoint = async ({player, command, ctx}) => {
+  await updateUser({
+    id: player.id,
+    data: {
+      $inc: {
+        locationPoint: command
+      },
+    }
+  })
+  await ctx.reply(
+    `<b>Location Point added</b>
 <b>Team Name</b>: <i>${player.teamName}</i>
 <b>Point</b>: <i>${command}</i>`, {parse_mode: 'HTML'})
   if (command > 0) {

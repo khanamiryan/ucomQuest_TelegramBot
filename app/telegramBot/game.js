@@ -333,7 +333,10 @@ const showInfo = async(ctx) => {
         return false
     }
     const teamNameText = `Սիրելի <b>${user.teamName}</b> թիմ,`
-    const pointText = !user.locationPoint && !user.allPoint ? `դուք դեռ չունեք միավորներ` : `դուք ունեք <b><i>${user.locationPoint + user.allPoint}</i></b> միավոր`
+    const allPointText = !user.locationPoint && !user.allPoint ? `դուք դեռ չունեք միավորներ` :
+      `դուք ունեք ընդհանուր <b><i>${user.locationPoint + user.allPoint}</i></b> միավոր`
+    const locationPoint = user.locationPoint ? `այս տարածքում ձեր միավորները <b><i>${user.locationPoint}</i></b> են` :
+      `այս տարածքում դուք դեռ չունեք միավորներ`
     const locationText = timesInfo.locationTime === 'noTime' ?
       false : timesInfo.locationTime < 1 ?
         `Տարածքի Խաղերը ավարտելու համար ձեզ ժամանակ չի մնացել` : `Տարածքի Խաղերը ավարտելու համար ձեզ մնացել է <b><i>${timesInfo.locationTime}</i></b> րոպե`
@@ -341,9 +344,13 @@ const showInfo = async(ctx) => {
       false : timesInfo.gameTime < 1 ?
         `Խաղը ավարտելու համար ձեզ ժամանակ չի մնացել` : `Խաղը ավարտելու համար ձեզ մնացել է <b><i>${timesInfo.gameTime}</i></b> րոպե`
 
-    await ctx.reply(`${teamNameText}${pointText}
+    await ctx.reply(`${teamNameText}
+${allPointText}
+${locationPoint}
+
 ${locationText ? locationText : ''}
-${locationText && gameText ? gameText : ''}
+
+${timesInfo.locationTime >= 1 && gameText ? gameText : ''}
 `, {
           parse_mode: 'HTML'
       }
