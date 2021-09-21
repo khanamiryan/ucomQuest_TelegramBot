@@ -67,7 +67,7 @@ const interceptor = async(ctx, next) => {
     }
 
     const [getCode, text, command] = ctx.message && ctx.message.text ? ctx.message.text.split(':') : []
-    const code = getCode.trim().toLocaleLowerCase();
+    const code = getCode && getCode.trim().toLocaleLowerCase();
     if (code && ctx.state.role === 'admin' && myCommands[code]) {
       const [player] = await getUserInfo((text || '').trim())
       if (player && player.id) {
