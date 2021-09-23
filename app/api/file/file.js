@@ -48,6 +48,35 @@ const getFileType = (filename) => {
   const filePath = `../../../uploads/${filename}`
   return FileType.fromFile(path.join(__dirname, filePath))
 }
+
+
+const file_system = require('fs');
+const archiver = require('archiver');
+
+router.get('/images', async (req, res) => {
+  const output = file_system.createWriteStream('images.zip');
+  const archive = archiver('zip');
+
+  output.on('close',  () => {
+    console.log(archive.pointer() + ' total bytes');
+    console.log('archiver has been finalized and the output file descriptor has closed.');
+  });
+
+  archive.on('error', function(err){
+    throw err;
+  });
+
+  archive.pipe(output);
+
+// append files from a sub-directory, putting its contents at the root of archive
+  const dir = path.join(__dirname, `../../../files/`)
+  archive.directory(dir, false);
+  archive.finalize().then();
+
+  res.json(true)
+})
+
+
 module.exports = {
   router,
   saveFile,
