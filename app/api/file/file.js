@@ -25,7 +25,7 @@ const saveFile = async (data) => {
   if (!fs.existsSync(path.join(__dirname, `../../../files/`))) {
     fs.mkdirSync(path.join(__dirname, `../../../files/`));
   }
-  const fileName = `${dir}/${data.fileName}`
+  const fileName = `${dir}/${data.userCode}${data.userCode}${data.userCode}__${data.fileName}`
   if (!fs.existsSync(dir)){
     fs.mkdirSync(dir);
   }
