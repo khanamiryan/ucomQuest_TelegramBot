@@ -60,10 +60,10 @@ const interceptor = async(ctx, next) => {
       await Users.updateOne({ id: user.id }, { teamName: ctx.message.text })
       ctx.state.teamName = ctx.message.text
       if (user.role === 'player') {
-        await ctx.reply(`Սիրելի <b>${ctx.message.text}</b> թիմի անդամներ գտեք մեքենան, որի վրա գրված է Ձեր թիմի կոդը և ուղևորվեք ...`, {parse_mode: 'HTML'})
+        await ctx.reply(`Սիրելի <b>${ctx.message.text}</b> թիմի անդամներ խնդրում ենք ուղարկել նկար Ձեր թիմից, որպեսզի սկսեք խաղը`, {parse_mode: 'HTML'})
         await showGameMenu(user.id)
       } else {
-        await ctx.reply(`Սիրելի <b>${ctx.message.text}</b>, դու <b>ADMIN</b> եք`, {parse_mode: 'HTML'})
+        await ctx.reply(`Սիրելի <b>${ctx.message.text}</b>, դու <b>ADMIN</b> ես`, {parse_mode: 'HTML'})
       }
       return false
     }
@@ -202,8 +202,6 @@ const playerInfoForAdmin = async ({player, ctx}) => {
 <b>Team Name</b>: <i>${user.teamName}</i>
 <b>Team location point</b>: <i>${user.locationPoint}</i>
 <b>Team all point</b>: <i>${user.allPoint + user.locationPoint}</i>
-<!--<b>location</b>: <i>${userLocation && userLocation.name || "doesn't exist"}</i>-->
-<!--<b>locationTime</b>: <i>${userTimes.locationTime}</i>-->
 <b>game</b>: <i>${game && game.name || "doesn't exist"}</i>
 <b>gameTime</b>: <i>${userTimes.gameTime}</i>
 <b>gameLocation</b>: <i>${game && game.location || "doesn't exist"}</i>
