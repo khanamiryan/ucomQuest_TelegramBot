@@ -62,7 +62,6 @@ Time will end in ${+process.env.notificationTimeInMinutes} minutes
 <b>locationTime</b>: <i>${userTimes?.locationTime}</i>
 <b>game</b>: <i>${player.gameData && player.gameData.name || "doesn't exist"}</i>
 <b>gameTime</b>: <i>${userTimes?.gameTime}</i>
-<!--<b>gameLocation</b>: <i>${player.playingGameData && player.playingGameData.location || "doesn't exist"}</i>-->
 `,
           {parse_mode: 'HTML'})
       }
