@@ -53,8 +53,8 @@ Time will end in ${+process.env.notificationTimeInMinutes} minutes
 <b>Location Name</b>: <i>${locationData.name}</i>
 <b>code</b>: <i>${user.code}</i>
 <b>Team Name</b>: <i>${user.teamName}</i>
-<b>Team location ponit</b>: <i>${user.locationPoint}</i>
-<b>Team all ponit</b>: <i>${user.allPoint + user.locationPoint}</i>
+<b>Team location point</b>: <i>${user.locationPoint}</i>
+<b>Team all point</b>: <i>${user.allPoint + user.locationPoint}</i>
 <b>location</b>: <i>${user.locationData && user.locationData.name || "doesn't exist"}</i>
 <b>locationTime</b>: <i>${userTimes.locationTime}</i>
 <b>game</b>: <i>${user.gameData && user.gameData.name || "doesn't exist"}</i>
@@ -77,8 +77,8 @@ Time will end in ${process.env.notificationTimeInMinutes} minutes
 <b>Location Name</b>: <i>${locationData.name}</i>
 <b>code</b>: <i>${user.code}</i>
 <b>Team Name</b>: <i>${user.teamName}</i>
-<b>Team location ponit</b>: <i>${user.locationPoint}</i>
-<b>Team all ponit</b>: <i>${user.allPoint + user.locationPoint}</i>
+<b>Team location point</b>: <i>${user.locationPoint}</i>
+<b>Team all point</b>: <i>${user.allPoint + user.locationPoint}</i>
 <b>location</b>: <i>${user.locationData && user.locationData.name || "doesn't exist"}</i>
 <b>locationTime</b>: <i>${userTimes.locationTime}</i>
 <b>game</b>: <i>${user.gameData && user.gameData.name || "doesn't exist"}</i>
