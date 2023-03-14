@@ -3,6 +3,7 @@ const btoa = require('btoa');
 const router = express.Router()
 const {router: userRouter} = require('./api/user/user')
 const {router: gameRouter} = require('./api/game/game')
+const {router: clueRouter} = require('./api/clue/clue')
 const {router: locationRouter} = require('./api/location/location')
 const {router: fileRouter} = require('./api/file/file')
 const {router: leaderBoardRouter} = require('./api/leaderBoard/leaderBoard')
@@ -15,6 +16,7 @@ router.use('/leaderboard', leaderBoardRouter)
 router.use('/user', userRouter)
 router.use('/location', locationRouter)
 router.use('/game', gameRouter)
+router.use('/clue', clueRouter)
 router.use('/file', fileRouter)
 router.post('/login', (req, res) => {
   if (req.body.name === process.env.loginUserName && req.body.password === process.env.loginUserPassword) {

@@ -13,7 +13,7 @@ app.use(bodyParser.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use((req, res, next) => {
   const bearerHeader = req.headers["authorization"];
-  if (req.url === "/login" || req.url === "/leaderboard") {
+  if (req.url === "/login" || req.url === "/leaderboard"|| req.url==="/clue"|| req.url==="/game") {
     next();
   } else if (bearerHeader) {
     const [, bearer] = bearerHeader.split(" ");
