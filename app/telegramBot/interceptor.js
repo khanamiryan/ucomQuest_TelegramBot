@@ -1,6 +1,8 @@
 const Users = require("../api/user/user.schema");
 const { getUserById, updateUser, getUserByVerificationCode, getUserInfo } = require("../api/user/user");
 const { showGameMenu, checkUserGameStatus, getPlayerGameAndLocationTimes} = require("./game");
+const {getGameById} = require("../api/game/game");
+const {getLocationDataById} = require("../api/location/location");
 
 const myCommands = {
   stop: 'chatting is stop',
@@ -58,10 +60,10 @@ const interceptor = async(ctx, next) => {
       await Users.updateOne({ id: user.id }, { teamName: ctx.message.text })
       ctx.state.teamName = ctx.message.text
       if (user.role === 'player') {
-        await ctx.reply(`Սիրելի <b>${ctx.message.text}</b> թիմի անդամներ գտեք մեքենան, որի վրա գրված է Ձեր թիմի կոդը և ուղևորվեք ...`, {parse_mode: 'HTML'})
+        await ctx.reply(`Սիրելի <b>${ctx.message.text}</b> թիմի անդամներ խնդրում ենք ուղարկել նկար Ձեր թիմից, որպեսզի սկսեք խաղը`, {parse_mode: 'HTML'})
         await showGameMenu(user.id)
       } else {
-        await ctx.reply(`Սիրելի <b>${ctx.message.text}</b>, դու <b>ADMIN</b> եք`, {parse_mode: 'HTML'})
+        await ctx.reply(`Սիրելի <b>${ctx.message.text}</b>, դու <b>ADMIN</b> ես`, {parse_mode: 'HTML'})
       }
       return false
     }
@@ -193,16 +195,17 @@ const playerInfoForAdmin = async ({player, ctx}) => {
   if (player && player._id) {
     const user = await getUserById(player.id)
     const userTimes = await getPlayerGameAndLocationTimes(player.id)
+    const game = player.playingGameId && (await getGameById(player.playingGameId))
+    const userLocation = await getLocationDataById(user.playingLocationId);
     await ctx.reply(`
 <b>code</b>: <i>${user.code}</i>
 <b>Team Name</b>: <i>${user.teamName}</i>
-<b>Team location ponit</b>: <i>${user.locationPoint}</i>
-<b>Team all ponit</b>: <i>${user.allPoint + user.locationPoint}</i>
-<b>location</b>: <i>${user.locationData && user.locationData.name || "doesn't exist"}</i>
-<b>locationTime</b>: <i>${userTimes.locationTime}</i>
-<b>game</b>: <i>${user.gameData && user.gameData.name || "doesn't exist"}</i>
+<b>Team location point</b>: <i>${user.locationPoint}</i>
+<b>Team all point</b>: <i>${user.allPoint + user.locationPoint}</i>
+<b>game</b>: <i>${game && game.name || "doesn't exist"}</i>
 <b>gameTime</b>: <i>${userTimes.gameTime}</i>
-<b>gameLocation</b>: <i>${user.playingGameData && user.playingGameData.location || "doesn't exist"}</i>
+<b>gameLocation</b>: <i>${game && game.location || "doesn't exist"}</i>
+<b>playStatus</b>: <i>${user.playStatus}</i>
           `, {
       parse_mode: 'html'
     })

@@ -48,59 +48,63 @@ const deleteMessagesFunction = async (userId) => {
 };
 
 const showGame = async ({ ctx, text }) => {
-  await deleteMessagesFunction(ctx.state.userId);
-  const gameStatus = await checkUserGameStatus(ctx.state.userId);
-  if (gameStatus) {
-    const [, locationGameText] = text.split("/");
-    const [, locationGameId] = locationGameText.split("=");
-    const gameData = await Game.findById(locationGameId);
-    if (gameData.nowPlaying >= gameData.maxPlayerCount) {
-      await ctx.reply(`Այս խաղում ազատ տեղեր չեն մնացել`, {
-        parse_mode: "HTML",
-      });
-      await showGameMenu(ctx.state.userId);
-      return false;
-    }
-    if (gameData.location) {
-      const deleteMessage = await ctx.replyWithLocation(
-        ...gameData.location.split(", ")
-      );
-      await newMessage({
-        messageId: deleteMessage.message_id,
-        userId: ctx.state.userId,
-      });
-    }
-    const gameButtons = [
-      [
-        { text: `Սկսել խաղը`, callback_data: `gTo:pG/lGId=${locationGameId}` }, // pG = playGame, gTo = gameTo, lGId = locationGameId,
-        {
-          text: `🔙 գնալ հետ ↩`,
-          callback_data: `gTo:gM/lGId=${locationGameId}`,
-        },
-      ], // gM = gameMenu, gTo = gameTo
-    ];
-    await ctx
-      .reply(`<b>${gameData.name}</b>: <i>${gameData.point}</i>`, {
-        parse_mode: "HTML",
-      })
-      .then(async (e) => {
+  try {
+    await deleteMessagesFunction(ctx.state.userId);
+    const gameStatus = await checkUserGameStatus(ctx.state.userId);
+    if (gameStatus) {
+      const [, locationGameText] = text.split("/");
+      const [, locationGameId] = locationGameText.split("=");
+      const gameData = await Game.findById(locationGameId);
+      if (gameData.nowPlaying >= gameData.maxPlayerCount) {
+        await ctx.reply(`Այս խաղում ազատ տեղեր չեն մնացել`, {
+          parse_mode: "HTML",
+        });
+        await showGameMenu(ctx.state.userId);
+        return false;
+      }
+      if (gameData.location) {
+        const deleteMessage = await ctx.replyWithLocation(
+          ...gameData.location.split(", ")
+        );
         await newMessage({
-          messageId: e.message_id,
+          messageId: deleteMessage.message_id,
           userId: ctx.state.userId,
         });
-      });
-    await ctx
-      .reply(
-        `${gameData.description}
+      }
+      const gameButtons = [
+        [
+          {text: `Սկսել խաղը`, callback_data: `gTo:pG/lGId=${locationGameId}`}, // pG = playGame, gTo = gameTo, lGId = locationGameId,
+          {
+            text: `🔙 գնալ հետ ↩`,
+            callback_data: `gTo:gM/lGId=${locationGameId}`,
+          },
+        ], // gM = gameMenu, gTo = gameTo
+      ];
+      await ctx
+        .reply(`<b>${gameData.name}</b>: <i>${gameData.point}</i>`, {
+          parse_mode: "HTML",
+        })
+        .then(async (e) => {
+          await newMessage({
+            messageId: e.message_id,
+            userId: ctx.state.userId,
+          });
+        });
+      await ctx
+        .reply(
+          `${gameData.description}
 Ժամանակը՝ ${gameData.gamePlayTime} րոպե`,
-        { reply_markup: JSON.stringify({ inline_keyboard: gameButtons }) }
-      )
-      .then(async (e) => {
-        await newMessage({
-          messageId: e.message_id,
-          userId: ctx.state.userId,
+          {reply_markup: JSON.stringify({inline_keyboard: gameButtons})}
+        )
+        .then(async (e) => {
+          await newMessage({
+            messageId: e.message_id,
+            userId: ctx.state.userId,
+          });
         });
-      });
+    }
+  } catch (e) {
+    console.log('showGame', 'ERROR: ' + e);
   }
 };
 const playGame = async ({ ctx, text }) => {
@@ -237,7 +241,7 @@ const showGameMenu = async (userId) => {
     if (user.playStatus === "finishGames") {
       await bot.telegram.sendMessage(
         userId,
-        "Դուք Վերջացրեցիք բոլոր խաղերը!!! Այժմ նստեք ձեր մեքենաները և ուղևորվեք Թումո, որովհետև մենք Ձեզ սպասում ենք...."
+        "Դուք Վերջացրեցիք բոլոր խաղերը!!! Այժմ գնացեք Վիկտորիա հյուրանոց, որպեսզի հավաքենք Փազլը"
       );
     } else if (user.playStatus === "goingLocation") {
       const location = await getLocationDataById(user.playingLocationId);
@@ -424,12 +428,12 @@ const showInfo = async (ctx) => {
   const allPointText =
     !user.locationPoint && !user.allPoint
       ? `դուք դեռ չունեք միավորներ`
-      : `դուք ունեք ընդհանուր <b><i>${
+      : `դուք ունեք  <b><i>${
           user.locationPoint + user.allPoint
         }</i></b> միավոր`;
-  const locationPoint = user.locationPoint
-    ? `այս տարածքում ձեր միավորները <b><i>${user.locationPoint}</i></b> են`
-    : `այս տարածքում դուք դեռ չունեք միավորներ`;
+  // const locationPoint = user.locationPoint
+  //   ? `ձեր միավորները <b><i>${user.locationPoint}</i></b> են`
+  //   : ` դուք դեռ չունեք միավորներ`;
   const locationText =
     timesInfo.locationTime === "noTime"
       ? false
@@ -443,10 +447,22 @@ const showInfo = async (ctx) => {
       ? `Խաղը ավարտելու համար ձեզ ժամանակ չի մնացել`
       : `Խաղը ավարտելու համար ձեզ մնացել է <b><i>${timesInfo.gameTime}</i></b> րոպե`;
 
+//   await ctx.reply(
+//     `${teamNameText}
+// ${allPointText}
+// ${locationPoint}
+//
+// ${locationText ? locationText : ""}
+//
+// ${timesInfo.locationTime >= 1 && gameText ? gameText : ""}
+// `,
+//     {
+//       parse_mode: "HTML",
+//     }
+//   );
   await ctx.reply(
     `${teamNameText}
 ${allPointText}
-${locationPoint}
 
 ${locationText ? locationText : ""}
 
@@ -466,7 +482,7 @@ const sendWelcomeMessage = (ctx) => {
       `Բարի գալուստ։
 Շնորհավորում ենք դուք ունեք բացառիկ հնարավորություն մասնակցելու 
 <b>All Inclusive Armenia</b> 
-ընկերության կողմից կազմակերպված քաղաքային քվեստին։ 
+ընկերության կողմից կազմակերպված Գյումրիում տեղի ունեցող քաղաքային քվեստին։ 
 Ձեզ սպասվում են հետաքրքիր ու յուրահատուկ խաղեր, որոնք երբևէ չեք խաղացել։
 Ձեր խաղավարների մոտ կան թղթապանակներ, դրա մեջ գտնվող իրերը օգնելու են հաղթահարել մեր խաղերը։ 
 Գտեք այնտեղից առաջին խաղը։ 
@@ -511,7 +527,7 @@ const checkUserGameStatus = async (userId, showGameMenuParam = true) => {
       });
       await bot.telegram.sendMessage(
         userId,
-        `Ձեր ժամանակն այս տարածքում սպառվել է, այժմ հերթը <b>Level Up</b> խաղինն է`,
+        `Շնորհավորում ենք դուք հաղթահարեցիք մեր փորձությունները, որպեսզի կարողանանք հավաքել մեր վերջնական փազլը կատարեք այս վերջին առաջադրանքը`,
         {
           parse_mode: "HTML",
         }
