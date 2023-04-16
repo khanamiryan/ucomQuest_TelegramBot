@@ -1,16 +1,19 @@
-const Game = require("../api/game/game.schema");
+const Game = require("../api/clue/clue.schema");
 const Users = require("../api/user/user.schema");
 const Messages = require("../api/messages/messages.schema");
-const { updateUser, getUserById } = require("../api/user/user");
+const { updateUserByTelegramId, getUserByTelegramId } = require("../api/user/user");
 const { Telegraf } = require("telegraf");
 const { getLocationDataById } = require("../api/location/location");
-const { getGameById, updateGame } = require("../api/game/game");
+const { getClueById, updateClue } = require("../api/clue/clue");
 const { newMessage } = require("../api/messages/messages");
 const moment = require("moment");
 const { getFile, getFileType } = require("../api/file/file");
+const {Clues} = require("../api/clue/clue");
+
 const bot = new Telegraf(process.env.botToken, {
   polling: true,
 });
+//todo: what is doing
 const deleteMessagesFunction = async (userId) => {
   const deleteMessages = await Messages.find({
     userId,
@@ -47,12 +50,13 @@ const deleteMessagesFunction = async (userId) => {
   }
 };
 
-const showGame = async ({ ctx, text }) => {
+const showGame = async ({ ctx, text:gametext }) => {
   try {
     await deleteMessagesFunction(ctx.state.userId);
     const gameStatus = await checkUserGameStatus(ctx.state.userId);
     if (gameStatus) {
-      const [, locationGameText] = text.split("/");
+      console.log(gametext)
+      const [, locationGameText] = gametext.split("/");
       const [, locationGameId] = locationGameText.split("=");
       const gameData = await Game.findById(locationGameId);
       if (gameData.nowPlaying >= gameData.maxPlayerCount) {
@@ -62,9 +66,9 @@ const showGame = async ({ ctx, text }) => {
         await showGameMenu(ctx.state.userId);
         return false;
       }
-      if (gameData.location) {
+      if (gameData.locationFromGoogle) {
         const deleteMessage = await ctx.replyWithLocation(
-          ...gameData.location.split(", ")
+          ...gameData.locationFromGoogle.split(", ")
         );
         await newMessage({
           messageId: deleteMessage.message_id,
@@ -90,10 +94,13 @@ const showGame = async ({ ctx, text }) => {
             userId: ctx.state.userId,
           });
         });
+      let text = gameData.description;
+        if (gameData.playTime) {
+            text += `\nԺամանակը՝ ${gameData.playTime} րոպե`;
+        }
       await ctx
         .reply(
-          `${gameData.description}
-Ժամանակը՝ ${gameData.gamePlayTime} րոպե`,
+          text,
           {reply_markup: JSON.stringify({inline_keyboard: gameButtons})}
         )
         .then(async (e) => {
@@ -123,7 +130,7 @@ const playGame = async ({ ctx, text }) => {
       await showGameMenu(ctx.state.userId);
       return false;
     }
-    await updateGame(
+    await updateClue(
       { _id: gameData._id },
       {
         $inc: {
@@ -132,11 +139,11 @@ const playGame = async ({ ctx, text }) => {
       }
     );
     await Users.updateOne(
-      { id: ctx.state.userId },
+      { telegramId: ctx.state.userId },
       {
         playingGameId: gameData._id,
-        $push: { playedGames: gameData.gameCode },
-        playingGameTime: moment().add(gameData.gamePlayTime, "minutes"),
+        $push: { playedGames: gameData.clueCode||gameData._id },
+        playingGameTime: moment().add(gameData.playTime, "minutes"),
       }
     );
     await ctx.reply(
@@ -159,13 +166,13 @@ ${gameData.fullDescription}`,
               .replyWithPhoto({ source: buffer, filename: gameData.fileName })
               .then(async (e) => {
                 await bot.telegram
-                  .deleteMessage(ctx.state.user.id, message.message_id)
+                  .deleteMessage(ctx.state.userId, message.message_id)
                   .then()
                   .catch(async (err) => {
                     console.log(2222, err);
                     await Messages.updateMany(
                       {
-                        userId: ctx.state.user.id,
+                        userId: ctx.state.userId,
                         messagesType: "delete",
                       },
                       {
@@ -180,13 +187,13 @@ ${gameData.fullDescription}`,
               .replyWithVideo({ source: buffer, filename: gameData.fileName })
               .then(async (e) => {
                 await bot.telegram
-                  .deleteMessage(ctx.state.user.id, message.message_id)
+                  .deleteMessage(ctx.state.userId, message.message_id)
                   .then()
                   .catch(async (err) => {
                     console.log(2222, err);
                     await Messages.updateMany(
                       {
-                        userId: ctx.state.user.id,
+                        userId: ctx.state.userId,
                         messagesType: "delete",
                       },
                       {
@@ -204,13 +211,13 @@ ${gameData.fullDescription}`,
               })
               .then(async (e) => {
                 await bot.telegram
-                  .deleteMessage(ctx.state.user.id, message.message_id)
+                  .deleteMessage(ctx.state.userId, message.message_id)
                   .then()
                   .catch(async (err) => {
                     console.log(2222, err);
                     await Messages.updateMany(
                       {
-                        userId: ctx.state.user.id,
+                        userId: ctx.state.userId,
                         messagesType: "delete",
                       },
                       {
@@ -229,51 +236,56 @@ ${gameData.fullDescription}`,
 };
 
 // Game Menu
-const showGameMenu = async (userId) => {
+const showGameMenu = async (userTelegramId) => {
   try {
-    await checkUserGameStatus(userId, false);
-    const user = await getUserById(userId);
-    await deleteMessagesFunction(userId);
+
+    await checkUserGameStatus(userTelegramId, false);//???
+    const user = await getUserByTelegramId(userTelegramId);
+    await deleteMessagesFunction(userTelegramId);//???
     if (user.role === "admin") {
-      await bot.telegram.sendMessage(userId, "you are Admin");
+      await bot.telegram.sendMessage(userTelegramId, "Դուք ադմին եք, դուք չունեք միավորներ");
       return false;
+    }
+
+    const location = await getLocationDataById(user.playingLocationId.toString());
+    if(!location){
+      throw new Error("Location not found for the user");
     }
     if (user.playStatus === "finishGames") {
       await bot.telegram.sendMessage(
-        userId,
+        userTelegramId,//todo
         "Դուք Վերջացրեցիք բոլոր խաղերը!!! Այժմ գնացեք Վիկտորիա հյուրանոց, որպեսզի հավաքենք Փազլը"
       );
-    } else if (user.playStatus === "goingLocation") {
-      const location = await getLocationDataById(user.playingLocationId);
-      await bot.telegram.sendMessage(userId, location.startDescription);
+    } else if (user.playStatus === "goingLocation"&&location?.needToGoBeforeStart) {
+      // const location = await getLocationDataById(user.playingLocationId);
+      await bot.telegram.sendMessage(userTelegramId, location.startDescription);
     } else if (user.playingGameId) {
       await bot.telegram.sendMessage(
-        userId,
+        userTelegramId,
         "Դուք դեռ խաղի ընթացքի մեջ եք և այդ պատճառով խաղերին հասանելիություն չունեք։"
       );
     } else {
-      const userGames = await Users.aggregate([{ $match: { id: userId } }]);
-      const gameType =
-        user.playStatus === "playingGame" ? "standardGame" : "levelUp";
-      const games = await Game.aggregate([
-        { $match: { locationId: user.playingLocationId } },
+      const userGames = await Users.findOne({ telegramId: userTelegramId });
+      const clueType = user.playStatus !== "playingGame" ? "levelUp" : "standardGame";
+      const games = await Clues.aggregate([
+         { $match: { locationId: user.playingLocationId } },
         {
           $match: {
-            gameCode: {
+            clueCode: {
               $not: {
-                $in: userGames[0].playedGames,
+                $in: userGames.playedGames,
               },
             },
           },
         },
         {
           $match: {
-            gameType,
+            clueType,
           },
         },
         {
           $match: {
-            $expr: { $gt: ["$maxPlayerCount", "$nowPlaying"] },
+            $expr: { $gt: ["$maxPlayersSameTime", "$nowPlaying"] },
           },
         },
       ]);
@@ -292,17 +304,20 @@ const showGameMenu = async (userId) => {
           gameButtonsArray.splice(0, +process.env.buttonCountInRow)
         );
       await bot.telegram
-        .sendMessage(userId, `Խաղերը`, {
+        .sendMessage(userTelegramId, `Առաջադրանքները`, {
           reply_markup: JSON.stringify({ inline_keyboard: gameButtons }),
         })
         .then(async (e) => {
           await newMessage({
             messageId: e.message_id,
-            userId,
+            userId: userTelegramId,
           });
         });
     }
   } catch (e) {
+    const user = await getUserByTelegramId(userTelegramId);
+    const adminId = await getUserByTelegramId(user.adminId).telegramId;
+    await bot.telegram.sendMessage(adminId, "Սխալ է տեղի ունեցել։"+ e.message);
     console.log(1111, e);
   }
 };
@@ -312,19 +327,19 @@ const approveGame = async ({ ctx, text }) => {
   });
   const [, user] = text.split("/");
   const [, userId] = user.split("=");
-  const userData = await getUserById(userId);
-  if (userData.playStatus === "playingGame") {
-    const game = await getGameById(userData.playingGameId);
-    await updateGame(
-      { _id: userData.playingGameId },
+  const player = await getUserByTelegramId(userId);
+  if (player.playStatus === "playingGame") {
+    const game = await getClueById(player.playingGameId);
+    await updateClue(
+      { _id: player.playingGameId },
       {
         $inc: {
           nowPlaying: -1,
         },
       }
     );
-    await updateUser({
-      id: userId,
+    await updateUserByTelegramId({
+      telegramId: userId,
       data: {
         playingGameId: undefined,
         $unset: { playingGameTime: "" },
@@ -335,41 +350,45 @@ const approveGame = async ({ ctx, text }) => {
     });
     await ctx.telegram.sendMessage(
       userId,
-      `Շնորհավորում եմ դուք հաղթահարեցիք այս խաղը և վաստակել եք <b>${game.point}</b> միավոր։`,
+      `Շնորհավորում եմ դուք հաղթահարեցիք այս առաջադրանքը և վաստակել եք <b>${game.point}</b> միավոր։`,
       {
         parse_mode: "HTML",
       }
     );
-  } else if (userData.playStatus === "playingLevelUp") {
-    const playingLocationStep = userData.playingLocationSteps.indexOf(
-      userData.playingLocationId
+  } else if (player.playStatus === "playingLevelUp") {
+    const playingLocationStep = player.playingLocationSteps.indexOf(
+      player.playingLocationId
     );
-    if (playingLocationStep < userData.playingLocationSteps.length - 1) {
+    if (playingLocationStep < player.playingLocationSteps.length - 1) {
       // if playing in last location
-      await updateUser({
-        id: userData.id,
-        data: {
-          playingLocationId:
-            userData.playingLocationSteps[playingLocationStep + 1],
-          $inc: {
-            allPoint: +userData.locationPoint,
+
+      const nextLocationId = player.playingLocationSteps[playingLocationStep + 1];
+      if(nextLocationId) {
+        await updateUserByTelegramId({
+          telegramId: player.telegramId,
+          data: {
+            playingLocationId:
+            nextLocationId,
+            $inc: {
+              allPoint: +player.locationPoint,
+            },
+            locationPoint: 0,
+            playStatus: nextPlayStatus,
+            playingGameId: undefined,
+            $unset: {playingLocationTime: "", playingGameTime: ""},
           },
-          locationPoint: 0,
-          playStatus: "goingLocation",
-          playingGameId: undefined,
-          $unset: { playingLocationTime: "", playingGameTime: "" },
-        },
-      });
-      await ctx.telegram.sendMessage(
-        userId,
-        "Շնորհավորում եմ դուք հաղթահարել եք այս տարածքի խաղերը։\nՀաջորդիվ ուղևորվեք..."
-      );
+        });
+        await ctx.telegram.sendMessage(
+            userId,
+            "Շնորհավորում եմ դուք հաղթահարել եք այս տարածքի խաղերը։\nՀաջորդիվ ուղևորվեք..."
+        );
+      }
     } else {
-      await updateUser({
-        id: userData.id,
+      await updateUserByTelegramId({
+        telegramId: player.telegramId,
         data: {
           $inc: {
-            allPoint: +userData.locationPoint,
+            allPoint: +player.locationPoint,
           },
           locationPoint: 0,
           playStatus: "finishGames",
@@ -390,10 +409,10 @@ const approveLocation = async ({ ctx, text }) => {
   });
   const [, user] = text.split("/");
   const [, userId] = user.split("=");
-  const userData = await getUserById(userId);
+  const userData = await getUserByTelegramId(userId);
   const locationData = await getLocationDataById(userData.playingLocationId);
-  await updateUser({
-    id: userId,
+  await updateUserByTelegramId({
+    telegramId: userId,
     data: {
       playStatus: "playingGame",
       playingLocationTime: moment().add(locationData.finishTime, "minutes"),
@@ -413,15 +432,15 @@ const reject = async ({ ctx, text }) => {
   const [, userId] = user.split("=");
   await ctx.telegram.sendMessage(
     userId,
-    "Ձեր ուղարկված նկարն անվավեր է ճանաչվել մեր ադմինների կողմից։ Խնդրում ենք նորից փորձել։"
+    "Ձեր ուղարկված պատասխանը անվավեր է ճանաչվել մեր ադմինների կողմից։ Խնդրում ենք նորից փորձել։"
   );
 };
 
 const showInfo = async (ctx) => {
-  const { user } = await ctx.state;
-  const timesInfo = await getPlayerGameAndLocationTimes(user.id);
+  const { user,userId } = await ctx.state;
+  const timesInfo = await getPlayerGameAndLocationTimes(userId);
   if (user.role === "admin") {
-    await bot.telegram.sendMessage(user.id, "you are Admin");
+    await bot.telegram.sendMessage(userId, "you are Admin");
     return false;
   }
   const teamNameText = `Սիրելի <b>${user.teamName}</b> թիմ,`;
@@ -495,8 +514,8 @@ const sendWelcomeMessage = (ctx) => {
 };
 
 const editTeamName = async (ctx) => {
-  await updateUser({
-    id: ctx.state.user.id,
+  await updateUserByTelegramId({
+    telegramId: ctx.state.userId,
     data: {
       updatingTeamName: true,
     },
@@ -506,51 +525,60 @@ const editTeamName = async (ctx) => {
   });
 };
 
-const checkUserGameStatus = async (userId, showGameMenuParam = true) => {
+const checkUserGameStatus = async (userTelegramId, showGameMenuParam = true) => {
   try {
-    const user = await getUserById(userId);
+    const user = await getUserByTelegramId(userTelegramId);
     const locationData = await getLocationDataById(user.playingLocationId);
-    let playStatus =
+    let nextPlayStatus =
       user.locationPoint < locationData.finishPoint
         ? "playingGame"
-        : "playingLevelUp";
-    const times = await getPlayerGameAndLocationTimes(userId);
+        : "playingLevelUp"; //todo: change this becuaus it can be bugged now jus will use lllong time
+    const times = await getPlayerGameAndLocationTimes(userTelegramId);
     if (
       times.locationTime <= +process.env.notificationTimeInMinutes &&
       user.playStatus === "playingGame"
     ) {
-      await updateUser({
-        id: userId,
+      await updateUserByTelegramId({
+        telegramId: userTelegramId,
         data: {
           playStatus: "playingLevelUp",
         },
       });
       await bot.telegram.sendMessage(
-        userId,
+        userTelegramId,
         `Շնորհավորում ենք դուք հաղթահարեցիք մեր փորձությունները, որպեսզի կարողանանք հավաքել մեր վերջնական փազլը կատարեք այս վերջին առաջադրանքը`,
         {
           parse_mode: "HTML",
         }
       );
-      showGameMenuParam && (await showGameMenu(userId));
+      showGameMenuParam && (await showGameMenu(userTelegramId));
       return false;
     }
-    if (user.playStatus === "playingGame" && playStatus === "playingLevelUp") {
-      await updateUser({
-        id: userId,
+    if (user.playStatus === "playingGame" && nextPlayStatus === "playingLevelUp") {
+      await updateUserByTelegramId({
+        telegramId: userTelegramId,
         data: {
-          playStatus,
+          playStatus: nextPlayStatus,
         },
       });
       await bot.telegram.sendMessage(
-        userId,
+        userTelegramId,
         `Դուք հավաքեցիք բավականաչափ միավոր <b>Level Up</b> խաղալու համար`,
         {
           parse_mode: "HTML",
         }
       );
-      showGameMenuParam && (await showGameMenu(userId));
+      showGameMenuParam && (await showGameMenu(userTelegramId));
       return false;
+    }
+    if (user.playStatus === "goingLocation"&&! locationData.needToGoBeforeStart) {
+
+      await updateUserByTelegramId({
+        telegramId: userTelegramId,
+        data: {
+          playStatus: "playingGame",
+        },
+      });
     }
     return true;
   } catch (e) {
@@ -559,7 +587,7 @@ const checkUserGameStatus = async (userId, showGameMenuParam = true) => {
 };
 
 const getPlayerGameAndLocationTimes = async (userId) => {
-  const user = await getUserById(userId);
+  const user = await getUserByTelegramId(userId);
   const gameTime = user.playingGameTime
     ? -1 * moment().diff(user.playingGameTime, "minute")
     : "noTime";
@@ -604,7 +632,45 @@ const gameTo = async (ctx) => {
     console.log(2222, e);
   }
 };
+const onMessageTo = async (ctx) => {
+  try {
 
+
+      const [, uId, messageId] = ctx.update.callback_query.data.split(":");
+      await ctx.answerCbQuery();
+      await ctx.reply(`Send your answer to user ${uId}`, {//ete aystex poxeq,
+        reply_markup: {
+          force_reply: true // Set the `force_reply` property to true to ensure that the user's message is treated as a reply
+        },
+      })
+
+
+  }
+    catch (e) {
+
+
+    }
+}
+
+
+async function playerInfoText(user) {
+  const userTimes = await getPlayerGameAndLocationTimes(user.telegramId)
+  const game = user.playingGameId && (await getClueById(user.playingGameId))
+  // const userLocation = await getLocationDataById(user.playingLocationId);
+  //todo: show map instead of google location lat, long
+  return `
+<b>code</b>: <i>${user.code}</i>
+<b>Team Name</b>: <i>${user.teamName}</i>
+<b>Team location point</b>: <i>${user.locationPoint}</i>
+<b>Team all point</b>: <i>${user.allPoint + user.locationPoint}</i>
+<b>Team playing status</b>: <i>${user.playStatus}</i>
+<b>game</b>: <i>${game && game.name || "doesn't exist"}</i>
+<b>Game remaining time</b>: <i>${userTimes.gameTime}</i>
+<b>Game Location Name</b>: <i>${game && game.populate("location")?.name || "doesn't exist"}</i>
+<b>Game Google Location</b>: <i>${game && game.locationFromGoogle || "doesn't exist"}</i>
+
+          `;
+}
 module.exports = {
   getPlayerGameAndLocationTimes,
   checkUserGameStatus,
@@ -613,4 +679,6 @@ module.exports = {
   gameTo,
   showInfo,
   sendWelcomeMessage,
+    playerInfoText,
+  onMessageTo
 };

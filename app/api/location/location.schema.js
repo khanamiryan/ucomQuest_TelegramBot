@@ -7,11 +7,11 @@ const locationSchema = mongoose.Schema({
   },
   startDescription: {
     type: String,
-    required: true
+    required: false
   },
-  location: {
+  locationFromGoogle: {
     type: String,
-    required: true
+    required: false
   },
   finishPoint: {
     type: Number,
@@ -19,11 +19,29 @@ const locationSchema = mongoose.Schema({
   },
   finishTime: {
     type: Number,
-    required: true
+    required: false
   },
+  fileName: {
+    type: String,
+    required: false
+  },
+  needToGoBeforeStart: {
+    type: Boolean,
+    required: false,
+    default: true
+  }
 }, {
   versionKey: false,
   timestamps: true,
+});
+
+locationSchema.virtual('id').get(function(){
+  return this._id.toHexString();
+});
+
+// Ensure virtual fields are serialised.
+locationSchema.set('toJSON', {
+  virtuals: true
 });
 
 module.exports = mongoose.model('Locations', locationSchema);

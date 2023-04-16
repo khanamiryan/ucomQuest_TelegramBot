@@ -1,4 +1,4 @@
-const {userAggregate, getUserInfo, getUserById, updateUser} = require("../api/user/user");
+const {userAggregate, getUserInfo, getUserByTelegramId, updateUserByTelegramId} = require("../api/user/user");
 const moment = require("moment");
 const {getLocationDataById} = require("../api/location/location");
 const {getPlayerGameAndLocationTimes} = require("./game");
@@ -49,7 +49,7 @@ const scheduleFunction = async (bot) => {
         // console.log(123, moment().diff(playersLocation.playingLocationTime, 'minutes'));
         const locationData = await getLocationDataById(playersLocation.playingLocationId)
         const [player] = await getUserInfo(playersLocation.code)
-        const userTimes = await getPlayerGameAndLocationTimes(player.id)
+        const userTimes = await getPlayerGameAndLocationTimes(player.telegramId)
         await bot.telegram.sendMessage(player.chatTo,
           `<b>Location</b>
 Time will end in ${+process.env.notificationTimeInMinutes} minutes
@@ -68,13 +68,13 @@ Time will end in ${+process.env.notificationTimeInMinutes} minutes
     }
     if (playersGameTime.length) {
       for (const playersGame of playersGameTime) {
-        const player = await getUserById(playersGame.id)
-        const userTimes = await getPlayerGameAndLocationTimes(player.id)
+        const player = await getUserByTelegramId(playersGame.adminChatId)
+        const userTimes = await getPlayerGameAndLocationTimes(player.telegramId)
         const locationData = await getLocationDataById(player.playingLocationId)
-        await bot.telegram.sendMessage(player.id, `Խաղը ավարտելու համար ձեզ մնացել է <b>${process.env.notificationTimeInMinutes}</b> րոպե`, {
+        await bot.telegram.sendMessage(player.telegramId, `Խաղը ավարտելու համար ձեզ մնացել է <b>${process.env.notificationTimeInMinutes}</b> րոպե`, {
           parse_mode: 'html'
         })
-        await bot.telegram.sendMessage(player.chatTo,
+        await bot.telegram.sendMessage(player.adminChatId,
           `<B>Game</B>
 Time will end in ${process.env.notificationTimeInMinutes} minutes
 <b>Location Name</b>: <i>${locationData.name}</i>
@@ -86,7 +86,7 @@ Time will end in ${process.env.notificationTimeInMinutes} minutes
 <b>locationTime</b>: <i>${userTimes?.locationTime}</i>
 <b>game</b>: <i>${player.gameData && player.gameData.name || "doesn't exist"}</i>
 <b>gameTime</b>: <i>${userTimes?.gameTime}</i>
-<b>gameLocation</b>: <i>${player.playingGameData && player.playingGameData.location || "doesn't exist"}</i>
+<b>gameLocation</b>: <i>${player.playingGameData && player.playingGameData.locationFromGoogle || "doesn't exist"}</i>
 `,
           {parse_mode: 'HTML'})
       }

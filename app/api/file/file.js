@@ -20,6 +20,12 @@ router.get('/fileData/:fileName', async (req, res) => {
   }
   res.json(data)
 })
+router.get('/files/:filename', async(req, res) => {
+  const { filename } = req.params;
+  const filePath = `uploads/`;
+
+  res.sendFile(filename, { root: filePath });
+});
 const saveFile = async (data) => {
   const dir = path.join(__dirname, `../../../files/${data.userCode}/`)
   if (!fs.existsSync(path.join(__dirname, `../../../files/`))) {

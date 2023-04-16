@@ -2,10 +2,11 @@ const express = require('express');
 const btoa = require('btoa');
 const router = express.Router()
 const {router: userRouter} = require('./api/user/user')
-const {router: gameRouter} = require('./api/game/game')
+const {router: gameRouter} = require('./api/clue/clue')
 const {router: clueRouter} = require('./api/clue/clue')
 const {router: locationRouter} = require('./api/location/location')
 const {router: fileRouter} = require('./api/file/file')
+const {router: chatRouter} = require('./api/chat/chat')
 const {router: leaderBoardRouter} = require('./api/leaderBoard/leaderBoard')
 
 router.get('/', (req, res) => {
@@ -18,7 +19,9 @@ router.use('/location', locationRouter)
 router.use('/game', gameRouter)
 router.use('/clue', clueRouter)
 router.use('/file', fileRouter)
-router.post('/login', (req, res) => {
+router.use('/chat', chatRouter)
+router.post('/login',  (req, res) => {
+
   if (req.body.name === process.env.loginUserName && req.body.password === process.env.loginUserPassword) {
     res.send({token: btoa(process.env.token)
     })

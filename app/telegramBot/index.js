@@ -1,22 +1,32 @@
-const {Telegraf} = require('telegraf');
+const {Telegraf, Markup} = require('telegraf');
 const schedule = require('node-schedule')
 const bot = new Telegraf(process.env.botToken, {
   polling: true,
 });
-const {showGameMenu, gameTo, showInfo, sendWelcomeMessage} = require('./game')
+
+const {showGameMenu, gameTo, showInfo, sendWelcomeMessage, onMessageTo} = require('./game')
 const interceptor = require('./interceptor')
 const {menuMiddleware: admin, adminPage, showAdminInfo} = require('./admin')
-const {onText, onPhoto, onVideo, actionTextTo, onContact, onLocation, onFile, onlyForward} = require("./playerOnData");
+const {onText, onPhoto, onVideo, actionAnswerToMessage, onContact, onLocation, onFile, onlyForward} = require("./playerOnData");
 const {scheduleFunction} = require("./schedule");
+// bot.launch().then(() => {
+//   console.log("Connected to Telegram successfully!");
+// });
+bot.on("polling_error",(error)=>{
+  console.log('polling error', error);
+})
+// bot.start((ctx) => ctx.reply('Welcome'))
+
 
 bot.use(async (ctx, next) => interceptor(ctx, next))
 
 // bot.command('phone', (ctx) => {
 //   ctx.reply('Send me your number please', { reply_markup: { keyboard: [[{text: '📲 Send phone number', request_contact: true}]], resize_keyboard: true, one_time_keyboard: true  } })
 // })
-// bot.command('location', (ctx) => {
-//   ctx.reply('Send me your location please', { reply_markup: { keyboard: [[{text: 'send location', request_location: true}]], resize_keyboard: true, one_time_keyboard: true  } })
-// })
+bot.command('location', (ctx) => {//todo: hayeren
+  ctx.reply('Send me your location please', { reply_markup: { keyboard: [[{text: 'send location', request_location: true}]], resize_keyboard: true, one_time_keyboard: true  } })
+})
+
 bot.on('contact', async (ctx) => onContact(ctx))
 bot.on('location', async (ctx) => onLocation(ctx))
 
@@ -31,14 +41,16 @@ bot.command('points', async ctx => showInfo(ctx)) // open Games Menu
 bot.command('info', async ctx => showInfo(ctx)) // open Games Menu
 bot.command('help', async ctx => showAdminInfo(ctx)) // open Games Menu
 bot.action(/^gTo/, async (ctx) => gameTo(ctx)) // gameTo
-
+bot.action(/^oneMessageTo/,async (ctx) => onMessageTo(ctx)) // oneMessageT);
 bot.on('text', async (ctx) => onText(ctx))
 bot.on('photo', async (ctx) => onPhoto(ctx))
 bot.on('video', async (ctx) => onVideo(ctx))
 bot.on('document', (ctx) => onFile(ctx))
 bot.on('message', (ctx) => onlyForward(ctx))
 
-bot.action(/^textTo/, async (ctx) => actionTextTo(ctx))
+bot.action(/^answerToMessage/, async (ctx) => actionAnswerToMessage(ctx));
+
+// bot.action(/^oneanswerToMessage/, async (ctx) => actionOneanswerToMessage(ctx))
 bot.action('back', async (ctx) => adminPage(ctx));
 bot.use(async (ctx, next) => {
   if (ctx.callbackQuery && 'data' in ctx.callbackQuery) {

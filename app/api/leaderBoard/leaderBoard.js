@@ -7,7 +7,7 @@ router.get('/', async (req, res) => {
     {
       $match: {
         role: 'player',
-        id: { $exists: true}
+        telegramId: { $exists: true}
       }
     },
     {

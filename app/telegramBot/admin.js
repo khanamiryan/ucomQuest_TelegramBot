@@ -2,22 +2,25 @@ const {MenuTemplate, MenuMiddleware, createBackMainMenuButtons} = require('teleg
 const Users = require('../api/user/user.schema')
 
 const findUsers = async (condition ={}) => {
-  return Users.find({...condition,role: 'player', id: { $exists: true }})
+  return Users.find({...condition,role: 'player', telegramId: { $exists: true }})
 }
 
 const menu = new MenuTemplate(() => 'Admin page')
-menu.interact(`User List`, 'userList', {
+menu.interact(`Նամակ գրել մասնակցին`, 'userList', {
   do: async (ctx) => {
-    ctx.deleteMessage()
+   // ctx.deleteMessage()
     const users = await findUsers({
-      adminId: ctx.state.userData_Id
+      adminId: ctx.state.userData_Id,
+      telegramId: { $exists: true }
     })
     let userButtons = [
       [{ text: '<< back', callback_data: 'back' }]
     ];
     for(const user of users){
       userButtons.unshift([
-        { text: `code: ${user.code}`, callback_data: `textTo:${user.id}:${user.code}` },
+        { text: `team: ${user.teamName},
+        code: ${user.code},
+        curr. points: ${user.allPoint}`, callback_data: `answerToMessage:${user.telegramId}:${user.code}` },
       ])
     }
     ctx.reply(`Users: ${userButtons.length - 1}`, { reply_markup: JSON.stringify({ inline_keyboard: userButtons})})
@@ -55,8 +58,12 @@ const showAdminInfo = async (ctx) => {
   }
 }
 
+const sendMessageToUserAdmin = async (ctx, text) => {
+
+}
 module.exports = {
   menuMiddleware,
   adminPage,
-  showAdminInfo
+  showAdminInfo,
+  sendMessageToUserAdmin
 }

@@ -4,7 +4,7 @@ const userSchema = mongoose.Schema({
   teamName: {
     type: String,
   },
-  id: {
+  telegramId: {
     type: String,
     ensureIndex: true,
   },
@@ -22,7 +22,7 @@ const userSchema = mongoose.Schema({
   chatTo: {
     type: String,
   },
-  code: {
+  code: { //verification code
     type: String,
   },
   verificationCode: {
@@ -30,13 +30,19 @@ const userSchema = mongoose.Schema({
   },
   playingLocationId: {
     type: mongoose.Schema.Types.ObjectId,
+    required: false,
   },
   playingLocationSteps: {
     type: [mongoose.Schema.Types.ObjectId],
   },
-  playingLocationStepsNames: {
-    type: [String]
+  playingLocationCurrentStep: {
+    type: Number,
+    default: -1,
+    required: false,
   },
+  // playingLocationStepsNames: {
+  //   type: [String]
+  // },
   playingGameId: {
     type: mongoose.Schema.Types.ObjectId,
   },
@@ -51,6 +57,16 @@ const userSchema = mongoose.Schema({
   },
   playStatus: {
     type: String,
+    default: async function (){
+      if(this.playingLocationId){
+         const location = await Location.findById(this.playingLocationId.toString());
+         if(location.needToGoBeforeStart){
+           return 'goingLocation';
+         }else {
+           return 'playingGame';
+         }
+      }
+    }
   },
   locationPoint: {
     type: Number,
@@ -68,5 +84,18 @@ const userSchema = mongoose.Schema({
   versionKey: false,
   timestamps: true,
 });
+userSchema.virtual('adminChatId').get(async function(){
+  if(this.role === 'player') {
+    const admin = await User.findById(this.adminId.toString());
+    return admin.telegramId;
+  }else {
+    return this.chatTo;
+  }
+});
 
+// userSchema.virtual("playingLocationId").get(function () {
+//
+//         return this.playingLocationSteps[this.playingLocationCurrentStep]||this.playingLocationSteps[0];
+//
+// });
 module.exports = mongoose.model('Users', userSchema);

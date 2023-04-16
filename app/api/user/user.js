@@ -44,16 +44,18 @@ router.post('/', async (req, res) => {
   if (user && (user.code || user.verificationCode)) {
     res.json({error: 'use other code'})
   } else {
-    const newUser = new Users({...req.body, ...req.body.admin});
+    // delete req.body.id;
+    const newUser = new Users({...req.body});
+    // const newUser = new Users({...req.body, ...req.body.admin});
     if (newUser.role === 'player') {
       newUser.playStatus = 'goingLocation'
     }
       const user = await newUser.save()
     res.json(user)
-  }
+  } 
 })
 router.put('/info/:id', async (req, res) => {
-  await Users.updateOne({_id: req.params.id}, { $unset: { id: ""} });
+  await Users.updateOne({_id: req.params._id}, { $unset: { telegramId: ""} });
   res.json(true)
 })
 router.put('/', async (req, res) => {
@@ -61,46 +63,51 @@ router.put('/', async (req, res) => {
   if (user && (user.code || user.verificationCode) && user._id.toString() !== req.body._id) {
     res.json({error: 'use other code'})
   } else {
-    const user = await Users.updateOne({_id: req.body._id}, {...req.body, ...req.body.admin});
+    const user = await Users.findOneAndUpdate({_id: req.body._id}, {...req.body},{new: true});
+    // const user = await Users.updateOne({_id: req.body._id}, {...req.body, ...req.body.admin});
     res.json(user)
   }
 })
 router.delete('/:id', async (req, res) => {
-  await Users.deleteOne({_id: req.params.id})
+  await Users.deleteOne({_id: req.params._id})
   res.json(true)
 })
 
+
+const getUserById = async (_id) => {
+    return Users.findOne({_id});
+}
 const getUserInfo = async (code) => {
   return Users.aggregate([
     {
       $match: {code}
-    },
-    {
-      $lookup:
-        {
-          from: "locations",
-          localField: "playingLocationId",
-          foreignField: "_id",
-          as: "location"
-        }
-    },
-    {
-      $addFields: {locationData: { $arrayElemAt: [ "$location", 0 ] }}
-    },
-    {$project: {location: 0}},
-    {
-      $lookup:
-        {
-          from: "games",
-          localField: "playingGameId",
-          foreignField: "_id",
-          as: "game"
-        }
-    },
-    {
-      $addFields: {gameData: { $arrayElemAt: [ "$game", 0 ] }}
-    },
-    {$project: {game: 0}},
+    },{
+          $lookup:
+              {
+                  from: "locations",
+                  localField: "playingLocationId",
+                  foreignField: "_id",
+                  as: "location"
+              }
+      },
+      {
+          $addFields: {locationData: { $arrayElemAt: [ "$location", 0 ] }}
+      },
+      {$project: {location: 0}},
+      {
+          $lookup:
+              {
+                  from: "clues",
+                  localField: "playingGameId",
+                  foreignField: "_id",
+                  as: "game"
+              }
+      },
+      {
+          $addFields: {gameData: { $arrayElemAt: [ "$game", 0 ] }}
+      },
+      {$project: {game: 0}}
+
   ])
 }
 
@@ -112,11 +119,11 @@ const userAggregate = (aggregate) => {
   return Users.aggregate([...aggregate])
 }
 
-const getUserById = async (id) => {
-  return Users.findOne({id});
+const getUserByTelegramId = async (telegramId) => {
+  return Users.findOne({telegramId});
 }
-const updateUser = async ({id, data}) => {
-  return Users.updateOne({id}, data)
+const updateUserByTelegramId = async ({telegramId, data}) => {
+  return Users.findOneAndUpdate({telegramId}, data)
 }
 const getUserByCode = async (code) => {
   return Users.findOne({code});
@@ -132,7 +139,8 @@ module.exports = {
   getOnlyPLayers,
   getUserByVerificationCode,
   getUserInfo,
-  getUserById,
-  updateUser,
-  getUserByCode
+  getUserByTelegramId,
+  updateUserByTelegramId,
+  getUserByCode,
+    getUserById
 };

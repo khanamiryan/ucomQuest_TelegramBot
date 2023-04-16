@@ -7,13 +7,20 @@ const app = express();
 const bodyParser = require("body-parser");
 const btoa = require("btoa");
 const appRoute = require("./app/app");
+
+
+
+const { Server } = require("socket.io");
+
+const io = new Server(3000);
+
 app.use(express.json());
 app.use(cors());
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use((req, res, next) => {
   const bearerHeader = req.headers["authorization"];
-  if (req.url === "/login" || req.url === "/leaderboard"|| req.url==="/clue"|| req.url==="/game") {
+  if (req.url === "/login" || req.url === "/leaderboard"|| req.url==="/clue"|| req.url==="/game" || req.url==="/location" ||req.url.startsWith('/location') || req.url.startsWith('/file')||req.url.startsWith('/user')|| req.url.startsWith('/chat')){
     next();
   } else if (bearerHeader) {
     const [, bearer] = bearerHeader.split(" ");
@@ -29,6 +36,10 @@ app.use((req, res, next) => {
 });
 app.use(express.static("public"));
 app.use("/", appRoute);
+
 app.listen(process.env.port, () => {
   console.log(`App is listening to port ${process.env.port}`);
+});
+io.on('connection', (socket) => {
+  console.log('a user connected');
 });

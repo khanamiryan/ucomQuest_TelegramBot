@@ -1,19 +1,40 @@
 const express = require('express');
 const Location = require('./location.schema')
 const router = express.Router()
+const multer  = require('multer')
+const storageConfig = multer.diskStorage({
+  destination: (req, file, cb) =>{
+    cb(null, "uploads");
+  },
+  filename: (req, file, cb) =>{
+    cb(null, file.originalname);
+  }
+});
+const upload = multer({ dest: 'public/', storage: storageConfig })
 
 getLocation = async () => {
   return Location.find();
 }
 
-router.post('/', async (req, res) => {
-  req.body && delete req.body._id;
+router.post('/', upload.single('file'),async (req, res) => {
+  let body = req.body;
+
+  if (req.file && req.file.filename) {
+    body.fileName = req.file.filename
+  }
+  req.body && delete req.body._id
+
   const newLocation = new Location(req.body);
   const location = await newLocation.save()
   res.json(location)
 })
-router.put('/', async (req, res) => {
-  const location = await Location.updateOne({_id: req.body._id}, req.body);
+router.put('/', upload.single('file'), async (req, res) => {
+  let body = req.body;
+
+  if (req.file && req.file.filename) {
+    body.fileName = req.file.filename
+  }
+  const location = await Location.updateOne({_id: body._id}, body);
   res.json(location)
 })
 router.get('/', async (req, res) => {
@@ -21,7 +42,7 @@ router.get('/', async (req, res) => {
   res.json(locations)
 })
 router.delete('/:id', async (req, res) => {
-  await Location.deleteOne({_id: req.params.id})
+  await Location.deleteOne({_id: req.params._id})
   res.json(true)
 })
 

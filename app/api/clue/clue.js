@@ -27,16 +27,20 @@ router.put('/', upload.single('file'), async (req, res) => {
   if (req.file && req.file.filename) {
     body.fileName = req.file.filename
   }
+  delete body.id
+  //update and return the updated document
   const game = await Clues.updateOne({_id: body._id}, body);
+
   res.json(game)
 })
 router.get('/', async (req, res) => {
+  // console.log(req, res);
   let clues = await Clues.aggregate([
     {
       $lookup:
         {
           from: "locations",
-          localField: "locationId",
+          localField: "location",
           foreignField: "_id",
           as: "locationData"
         }
@@ -46,6 +50,7 @@ router.get('/', async (req, res) => {
     },
     {$project: {locationData: 0}},
   ])
+  // let clues  = await Clues.find();
   // games = await Promise.all(games.map(async game => {
   //   if(game.fileName) {
   //     return {
@@ -59,7 +64,7 @@ router.get('/', async (req, res) => {
   res.json(clues)
 })
 router.delete('/:id', async (req, res) => {
-  await Clues.deleteOne({_id: req.params.id})
+  await Clues.findByIdAndDelete({_id: req.params._id})
   res.json(true)
 })
 
