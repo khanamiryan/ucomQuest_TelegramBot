@@ -12,7 +12,7 @@ const appRoute = require("./app/app");
 
 const { Server } = require("socket.io");
 
-const io = new Server(3000);
+const io = new Server(3005);
 
 app.use(express.json());
 app.use(cors());

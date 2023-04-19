@@ -2,7 +2,7 @@ const {getUserByCode, updateUserByTelegramId, getUserByTelegramId} = require("..
 const {getLocationDataById} = require("../api/location/location");
 const {saveFile} = require("../api/file/file");
 const {getClueById} = require("../api/clue/clue");
-const {playerInfoText} = require("./game");
+const {getPlayerInfoText} = require("./game");
 const onText = async (ctx) => {
   try {
     if(ctx.message.reply_to_message){
@@ -66,7 +66,7 @@ const onText = async (ctx) => {
             ctx.state.chatTo,
             `Հաղորդագրություն մասնակցից։ 
 <b><i>${ctx.message.text}</i></b>\n\n
-User Info:${await playerInfoText(user)}`,
+User Info:${await getPlayerInfoText(user)}`,
             {
               parse_mode: "html",
               reply_markup: JSON.stringify({ inline_keyboard: [gameButtons] }),
@@ -155,7 +155,7 @@ const onPhoto = async (ctx) => {
             {text: `❌ reject`, callback_data: `gTo:rejG/uId=${ctx.state.userId}`}] // rejG = reject Game, uId = userId,
         ];
         await ctx.telegram.sendMessage(ctx.state.chatTo, `GameName: ${game.name}\nLocationName: ${userLocation.name}`, {reply_markup: JSON.stringify({inline_keyboard: gameButtons})})
-      } else if (ctx.state.user.playStatus === 'goingLocation'&&userLocation.needToGoBeforeStart) {
+      } else if (ctx.state.user.playStatus === 'goingLocation') {
         const userLocation = await getLocationDataById(ctx.state.user.playingLocationId);
         const gameButtons = [
           [{text: `✅ approve`, callback_data: `gTo:appL/uId=${ctx.state.userId}`}, // appL = approve Location, uId = userId,
@@ -214,7 +214,7 @@ const actionAnswerToMessage = async (ctx) => {
    const user =  await updateUserByTelegramId({
       telegramId: ctx.from.id,
       data: {
-        chatTo: userId
+        chatTo: userId//admin chattingo to user
       }
     })
     if (user){

@@ -146,9 +146,13 @@ const playGame = async ({ ctx, text }) => {
         playingGameTime: moment().add(gameData.playTime, "minutes"),
       }
     );
+    let message = `<b>Այժմ դուք խաղում եք <i>${gameData.name}</i> խաղը</b>\n`;
+
     await ctx.reply(
       `<b>Այժմ դուք խաղում եք <i>${gameData.name}</i> խաղը</b>
-${gameData.fullDescription}`,
+${gameData.fullDescription}
+<b>Տևողությունը ${gameData.playTime} րոպե</b>
+`,
       {
         parse_mode: "html",
       }
@@ -253,20 +257,40 @@ const showGameMenu = async (userTelegramId) => {
     }
     if (user.playStatus === "finishGames") {
       await bot.telegram.sendMessage(
-        userTelegramId,//todo
-        "Դուք Վերջացրեցիք բոլոր խաղերը!!! Այժմ գնացեք Վիկտորիա հյուրանոց, որպեսզի հավաքենք Փազլը"
+        userTelegramId,//todo use mangoose
+        "Դուք Վերջացրեցիք բոլոր խաղերը!!!"
       );
     } else if (user.playStatus === "goingLocation"&&location?.needToGoBeforeStart) {
       // const location = await getLocationDataById(user.playingLocationId);
       await bot.telegram.sendMessage(userTelegramId, location.startDescription);
     } else if (user.playingGameId) {
+
+      const timesInfo = await getPlayerGameAndLocationTimes(userTelegramId);
+
+
+      let message =``;
+        const gameData = await getClueById(user.playingGameId);
+        if (gameData) {
+          message += `Ձեր առաջադրանքի անունն է <b><i>${gameData.name}</i></b>\n`
+          message += `Նկարագրություն\n<b><i>${gameData.fullDescription}</i></b>\n`
+          if(timesInfo.gameTime>0&&timesInfo.gameTime<60){
+             message += `Հաղթահարելու համար մնացել է <b><i>${timesInfo.gameTime}</i></b> րոպե\n`
+          }
+          //  message += `<b>Տևողությունը ${gameData.playTime} րոպե</b>\n`
+        }
+
       await bot.telegram.sendMessage(
         userTelegramId,
-        "Դուք դեռ խաղի ընթացքի մեջ եք և այդ պատճառով խաղերին հասանելիություն չունեք։"
+        message,
+          {
+            parse_mode: "HTML",
+          }
+        // "Դուք դեռ խաղի ընթացքի մեջ եք և այդ պատճառով խաղերին հասանելիություն չունեք։"
       );
     } else {
       const userGames = await Users.findOne({ telegramId: userTelegramId });
       const clueType = user.playStatus !== "playingGame" ? "levelUp" : "standardGame";
+
       const games = await Clues.aggregate([
          { $match: { locationId: user.playingLocationId } },
         {
@@ -289,30 +313,36 @@ const showGameMenu = async (userTelegramId) => {
           },
         },
       ]);
-      let gameButtonsArray = [];
-      for (const game of games) {
-        gameButtonsArray.unshift(
-          {
-            text: `${game.name}: ${game.point}`,
-            callback_data: `gTo:gId/lG=${game._id}`,
-          } // gId = gameId
-        );
+      const chooseLevelUp = false;//todo add to game config
+      if(clueType==="levelUp"&&!chooseLevelUp&&true===false){
+        const levelupGame = gameButtonsArray[0];
+
+      }else {
+        let gameButtonsArray = [];
+        for (const game of games) {
+          gameButtonsArray.unshift(
+              {
+                text: `${game.name}: ${game.point}`,
+                callback_data: `gTo:gId/lG=${game._id}`,
+              } // gId = gameId
+          );
+        }
+        const gameButtons = [];
+        while (gameButtonsArray.length)
+          gameButtons.push(
+              gameButtonsArray.splice(0, +process.env.buttonCountInRow)
+          );
+        await bot.telegram
+            .sendMessage(userTelegramId, `Առաջադրանքները`, {
+              reply_markup: JSON.stringify({inline_keyboard: gameButtons}),
+            })
+            .then(async (e) => {
+              await newMessage({
+                messageId: e.message_id,
+                userId: userTelegramId,
+              });
+            });
       }
-      const gameButtons = [];
-      while (gameButtonsArray.length)
-        gameButtons.push(
-          gameButtonsArray.splice(0, +process.env.buttonCountInRow)
-        );
-      await bot.telegram
-        .sendMessage(userTelegramId, `Առաջադրանքները`, {
-          reply_markup: JSON.stringify({ inline_keyboard: gameButtons }),
-        })
-        .then(async (e) => {
-          await newMessage({
-            messageId: e.message_id,
-            userId: userTelegramId,
-          });
-        });
     }
   } catch (e) {
     const user = await getUserByTelegramId(userTelegramId);
@@ -321,6 +351,7 @@ const showGameMenu = async (userTelegramId) => {
     console.log(1111, e);
   }
 };
+
 const approveGame = async ({ ctx, text }) => {
   ctx.deleteMessage().catch((err) => {
     console.log(err);
@@ -330,24 +361,25 @@ const approveGame = async ({ ctx, text }) => {
   const player = await getUserByTelegramId(userId);
   if (player.playStatus === "playingGame") {
     const game = await getClueById(player.playingGameId);
-    await updateClue(
-      { _id: player.playingGameId },
-      {
-        $inc: {
-          nowPlaying: -1,
-        },
-      }
-    );
-    await updateUserByTelegramId({
-      telegramId: userId,
-      data: {
-        playingGameId: undefined,
-        $unset: { playingGameTime: "" },
-        $inc: {
-          locationPoint: +game.point,
-        },
-      },
-    });
+    // await updateClue(
+    //   { _id: player.playingGameId },
+    //   {
+    //     $inc: {
+    //       nowPlaying: -1,
+    //     },
+    //   }
+    // );
+    // await updateUserByTelegramId({
+    //   telegramId: userId,
+    //   data: {
+    //     playingGameId: undefined,
+    //     $unset: { playingGameTime: "" },
+    //     $inc: {
+    //       locationPoint: +game.point,
+    //     },
+    //   },
+    // });
+    await stopPlayingClue(player);
     await ctx.telegram.sendMessage(
       userId,
       `Շնորհավորում եմ դուք հաղթահարեցիք այս առաջադրանքը և վաստակել եք <b>${game.point}</b> միավոր։`,
@@ -364,42 +396,121 @@ const approveGame = async ({ ctx, text }) => {
 
       const nextLocationId = player.playingLocationSteps[playingLocationStep + 1];
       if(nextLocationId) {
-        await updateUserByTelegramId({
-          telegramId: player.telegramId,
-          data: {
-            playingLocationId:
-            nextLocationId,
-            $inc: {
-              allPoint: +player.locationPoint,
-            },
-            locationPoint: 0,
-            playStatus: nextPlayStatus,
-            playingGameId: undefined,
-            $unset: {playingLocationTime: "", playingGameTime: ""},
-          },
-        });
+        stopPlayingLocation(player);
+        goToNextLocation(player);
+
         await ctx.telegram.sendMessage(
             userId,
             "Շնորհավորում եմ դուք հաղթահարել եք այս տարածքի խաղերը։\nՀաջորդիվ ուղևորվեք..."
         );
       }
     } else {
-      await updateUserByTelegramId({
-        telegramId: player.telegramId,
-        data: {
-          $inc: {
-            allPoint: +player.locationPoint,
-          },
-          locationPoint: 0,
-          playStatus: "finishGames",
-          playingGameId: undefined,
-        },
-      });
+      await finishTheGame(player);
     }
   }
   // await bot.telegram.sendMessage(userId, 'Դուք ավարտեցիք Խաղը')
   await showGameMenu(userId);
 };
+const stopPlayingClue = async (player, successful=true) => {
+  try {
+    // const player = await getUserByTelegramId(playerTelegramId);
+    const clue = await getClueById(player.playingGameId);
+    if (player.playingGameId) {
+      await updateClue(
+          {_id: player.playingGameId},
+          {
+            $inc: {
+              nowPlaying: -1,
+            },
+          }
+      );
+      return await updateUserByTelegramId({
+        telegramId: player.telegramId,
+        data: {
+          playingGameId: undefined,
+          $unset: {playingGameTime: ""},
+          $inc: {
+            locationPoint: successful ? +clue.point : 0,
+          },
+        },
+      });
+    }
+
+  } catch (e) {
+    console.error('stopPlayingClueError',e);
+  }
+}
+const stopPlayingLocation = async (player) => {
+  try {
+    // const player = await getUserByTelegramId(playerTelegramId);
+    // const location = await getLocationDataById(player.playingLocationId);
+    // const nextPlayStatus = location.needToGoBeforeStart ? "goingLocation" : "playingGame";
+
+    if (player.playingGameId) {//we are stopping the game, if we are playing, because we are going to next location
+      stopPlayingClue(player);
+    }
+    return await updateUserByTelegramId({
+      telegramId: player.telegramId,
+      data: {
+        playingLocationId: undefined,
+        $inc: {
+          allPoint: +player.locationPoint, //todo allpoints will added after game finish, not after location finish
+        },
+        locationPoint: 0,
+        playStatus: undefined,//???
+        playingGameId: undefined,
+        $unset: {playingLocationTime: "", playingGameTime: ""},
+      },
+    });
+
+  }catch (e) {
+    console.error('stopPlayingLocationError', e);
+  }
+
+}
+
+const goToNextLocation = async (player) => {
+  // const player = await getUserByTelegramId(playerTelegramId);
+
+  const playingLocationStep = player.playingLocationSteps.indexOf(
+      player.playingLocationId
+  );
+
+  if (playingLocationStep < player.playingLocationSteps.length - 1) {
+    // if playing in last location
+    const nextPlayStatus = location.needToGoBeforeStart ? "goingLocation" : "playingGame";
+    const nextLocationId = player.playingLocationSteps[playingLocationStep + 1];
+    await updateUserByTelegramId({
+      telegramId: player.telegramId,
+      data: {
+        playingLocationId:
+        nextLocationId,
+        locationPoint: 0,
+        playStatus: nextPlayStatus,
+        playingGameId: undefined,
+        $unset: {playingLocationTime: "", playingGameTime: ""},
+      },
+    });
+  }else{
+    await finishTheGame(player)
+  }
+}
+async function finishTheGame(player){
+
+  player = stopPlayingLocation(player);
+
+  return await updateUserByTelegramId({
+    telegramId: player.telegramId,
+    data: {
+      $inc: {
+        allPoint: +player.locationPoint,
+      },
+      locationPoint: 0,
+      playStatus: "finishGames",
+      playingGameId: undefined,
+    },
+  });
+}
 const rejectGame = async ({ ctx, text }) => {
   await reject({ ctx, text });
 };
@@ -443,7 +554,7 @@ const showInfo = async (ctx) => {
     await bot.telegram.sendMessage(userId, "you are Admin");
     return false;
   }
-  const teamNameText = `Սիրելի <b>${user.teamName}</b> թիմ,`;
+  const teamNameText = `Սիրելի <b>${user.teamName}</b>`;
   const allPointText =
     !user.locationPoint && !user.allPoint
       ? `դուք դեռ չունեք միավորներ`
@@ -546,7 +657,7 @@ const checkUserGameStatus = async (userTelegramId, showGameMenuParam = true) => 
       });
       await bot.telegram.sendMessage(
         userTelegramId,
-        `Շնորհավորում ենք դուք հաղթահարեցիք մեր փորձությունները, որպեսզի կարողանանք հավաքել մեր վերջնական փազլը կատարեք այս վերջին առաջադրանքը`,
+        `Time end: Շնորհավորում ենք դուք հաղթահարեցիք մեր փորձությունները, որպեսզի կարողանանք հավաքել մեր վերջնական փազլը կատարեք այս վերջին առաջադրանքը`,
         {
           parse_mode: "HTML",
         }
@@ -653,7 +764,7 @@ const onMessageTo = async (ctx) => {
 }
 
 
-async function playerInfoText(user) {
+async function getPlayerInfoText(user) {
   const userTimes = await getPlayerGameAndLocationTimes(user.telegramId)
   const game = user.playingGameId && (await getClueById(user.playingGameId))
   // const userLocation = await getLocationDataById(user.playingLocationId);
@@ -671,6 +782,19 @@ async function playerInfoText(user) {
 
           `;
 }
+
+const cancelGameTimeout = async ({player, ctx}) => {
+  await updateUserByTelegramId({
+    telegramId: player.telegramId,
+    data: {
+      playingGameId: undefined,
+      $unset: {playingGameTime: ""},
+    }
+  })
+  await ctx.telegram.sendMessage(player.telegramId, `Ձեր Խաղը չեղարկվել է, ժամանակի ավարտի պատճառով`, {parse_mode: 'HTML'})
+  await showGameMenu(player.telegramId)
+
+}
 module.exports = {
   getPlayerGameAndLocationTimes,
   checkUserGameStatus,
@@ -679,6 +803,9 @@ module.exports = {
   gameTo,
   showInfo,
   sendWelcomeMessage,
-    playerInfoText,
-  onMessageTo
+    getPlayerInfoText,
+  onMessageTo,
+  cancelGameTimeout,
+  stopPlayingClue,
+  stopPlayingLocation
 };

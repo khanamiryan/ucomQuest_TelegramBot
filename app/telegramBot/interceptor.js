@@ -1,6 +1,6 @@
 const Users = require("../api/user/user.schema");
 const { getUserByTelegramId, updateUserByTelegramId, getUserByVerificationCode, getUserInfo, getUserById} = require("../api/user/user");
-const { showGameMenu, checkUserGameStatus, getPlayerGameAndLocationTimes, playerInfoText} = require("./game");
+const { showGameMenu, checkUserGameStatus, getPlayerGameAndLocationTimes, getPlayerInfoText} = require("./game");
 const {getClueById} = require("../api/clue/clue");
 const {getLocationDataById} = require("../api/location/location");
 
@@ -29,7 +29,7 @@ const interceptor = async(ctx, next) => {
       }
       const userWithSameVerificationCode = await getUserByVerificationCode(ctx.message.text)
       if (userWithSameVerificationCode) {
-        console.log('verificationCode', userWithSameVerificationCode)
+
         if (userWithSameVerificationCode.telegramId) {
           await ctx.reply('Այս կոդը արդեն ակտիվացրած է')
           return false
@@ -59,7 +59,7 @@ const interceptor = async(ctx, next) => {
     if(user.role !== 'admin') {
       const userAdmin  = await getUserById(user.adminId);//todo add checking
       ctx.state.chatTo = userAdmin.telegramId;
-      ctx.state.playingLocationId = user.playingLocationId || '';
+      ctx.state.playingLocationId = user.playingLocationId || user.playingLocationSteps[0] || undefined;
       ctx.state.playingGameId = user.playingGameId || undefined;
       ctx.state.teamName = user.teamName || '';
     }else {//if admin
@@ -75,9 +75,13 @@ const interceptor = async(ctx, next) => {
       await Users.updateOne({ telegramId: user.telegramId }, { teamName: ctx.message.text })
       ctx.state.teamName = ctx.message.text
       if (user.role === 'player') {
-        //todo: if gameinfo.approveWithPictureBeforeStart === true
-        await ctx.reply(`Սիրելի <b>${ctx.message.text}</b> թիմի անդամներ խնդրում ենք ուղարկել նկար Ձեր թիմից, որպեսզի սկսեք խաղը`, {parse_mode: 'HTML'})
-        await showGameMenu(user.telegramId)
+
+        const location = await getLocationDataById(user.playingLocationId);
+        if(location.needToGoBeforeStart) {
+          await ctx.reply(`Սիրելի <b>${ctx.message.text}</b> թիմի անդամներ խնդրում ենք ուղարկել նկար Ձեր թիմից, որպեսզի սկսեք խաղը`, {parse_mode: 'HTML'})
+        }
+          await showGameMenu(user.telegramId)
+
       } else {
         await ctx.reply(`Սիրելի <b>${ctx.message.text}</b>, դու <b>ADMIN</b> ես`, {parse_mode: 'HTML'})
       }
@@ -87,9 +91,9 @@ const interceptor = async(ctx, next) => {
       ctx.telegram.setMyCommands([
         // {command: '/start', description: 'Start'},
         {command: '/info', description: 'Ինֆորմացիա այս պահի մասին'},
-        {command: '/points', description: 'Միավորները'},
+    //    {command: '/points', description: 'Միավորները'},
         {command: '/help', description: 'Օգնություն'},
-        {command: '/game', description: 'Խաղը'},
+        {command: '/game', description: 'Խաղերի ցանկը'},
         // {command: '/admin', description: 'Admin'},
         // {command: '/cancel', description: 'Cancel'},
         // {command: '/cancelGame', description: 'Cancel Game'},
@@ -99,6 +103,22 @@ const interceptor = async(ctx, next) => {
         // {command: '/cancelQuestion', description: 'Cancel Question'},
         // {command: '/cancelLocationAnswer', description: 'Cancel Location Answer'},
       ]);
+    }else if(user.role === 'admin') {
+        ctx.telegram.setMyCommands([
+            {command: '/start', description: 'Start'},
+            {command: '/info', description: 'Ինֆորմացիա այս պահի մասին'},
+            // {command: '/points', description: 'Միավորները'},
+            {command: '/help', description: 'Օգնություն'},
+            {command: '/game', description: 'Խաղը'},
+            {command: '/admin', description: 'Admin'},
+            // {command: '/cancel', description: 'Cancel'},
+            // {command: '/cancelGame', description: 'Cancel Game'},
+            // {command: '/cancelLocation', description: 'Cancel Location'},
+            // {command: '/cancelClue', description: 'Cancel Clue'},
+            // {command: '/cancelAnswer', description: 'Cancel Answer'},
+            // {command: '/cancelQuestion', description: 'Cancel Question'},
+            // {command: '/cancelLocationAnswer', description: 'Cancel Location Answer'},
+        ]);
     }
 
     const [getCode, text, command] = ctx.message && ctx.message.text ? ctx.message.text.split(':') : []
@@ -234,7 +254,7 @@ const addLocationPoint = async ({player, command, ctx}) => {
 const playerInfoForAdmin = async ({player, ctx}) => {
   if (player && player._id) {
     const user = await getUserByTelegramId(player.telegramId)
-    const userInfoText = await playerInfoText(user);
+    const userInfoText = await getPlayerInfoText(user);
     await ctx.reply(userInfoText, {
       parse_mode: 'html'
     })

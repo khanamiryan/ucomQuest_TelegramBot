@@ -40,5 +40,5 @@ export function sendMessageTo(){
 
 
 module.exports = {
-    // playerInfoText,
+    // getPlayerInfoText,
 }

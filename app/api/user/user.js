@@ -42,7 +42,7 @@ router.get('/admins', (req, res) => {
 router.post('/', async (req, res) => {
   const user = await Users.findOne({ $or: [{code: req.body.code}, {verificationCode: req.body.verificationCode}]})
   if (user && (user.code || user.verificationCode)) {
-    res.json({error: 'use other code'})
+    res.status(400).json({error: 'use other code'})
   } else {
     // delete req.body.id;
     const newUser = new Users({...req.body});
@@ -61,14 +61,14 @@ router.put('/info/:id', async (req, res) => {
 router.put('/', async (req, res) => {
   const user = await Users.findOne({ $or: [{code: req.body.code}, {verificationCode: req.body.verificationCode}]})
   if (user && (user.code || user.verificationCode) && user._id.toString() !== req.body._id) {
-    res.json({error: 'use other code'})
+    res.status(400).json({error: 'use other code'})
   } else {
     const user = await Users.findOneAndUpdate({_id: req.body._id}, {...req.body},{new: true});
     // const user = await Users.updateOne({_id: req.body._id}, {...req.body, ...req.body.admin});
     res.json(user)
   }
 })
-router.delete('/:id', async (req, res) => {
+router.delete('/:_id', async (req, res) => {
   await Users.deleteOne({_id: req.params._id})
   res.json(true)
 })
