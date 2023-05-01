@@ -3,18 +3,19 @@ const {getLocationDataById} = require("../api/location/location");
 const {saveFile} = require("../api/file/file");
 const {getClueById} = require("../api/clue/clue");
 const {getPlayerInfoText} = require("./game");
+const {playStatuses} = require("../docs/constants");
 const onText = async (ctx) => {
   try {
-    if(ctx.message.reply_to_message){
-      if(ctx.message.reply_to_message.text.startsWith("Send your answer to user ")) {
-          const userId = ctx.message.reply_to_message.text.replace("Send your answer to user ", "")
-          await ctx.telegram.sendMessage(userId, `Admin: ${ctx.message.text}`);
-          return ;
-      }
-          console.log(ctx)
-    }
+    // if(ctx.message.reply_to_message){
+    //   if(ctx.message.reply_to_message.text.startsWith("Send your answer to user ")) {
+    //       const userId = ctx.message.reply_to_message.text.replace("Send your answer to user ", "")
+    //       await ctx.telegram.sendMessage(userId, `Admin: ${ctx.message.text}`);
+    //       return ;
+    //   }
+    //       console.log(ctx)
+    // }
     const userData = await getUserByTelegramId(ctx.from.id)
-    if (userData.updatingTeamName && ctx.message && ctx.message.text) { //????
+    if (userData?.updatingTeamName && ctx.message && ctx.message.text) { //????
       await updateUserByTelegramId({
         telegramId: ctx.state.userId, data: {
           updatingTeamName: false,
@@ -27,43 +28,86 @@ const onText = async (ctx) => {
       return false
     }
 
+
     if(ctx.state.role === 'admin'){
-      let text, user, code;
-      if(ctx.state.chatTo && ctx.message.text){
-        text = ctx.message.text;
-        user = await getUserByTelegramId(ctx.state.chatTo);
-      }else{
-        [code, text] = ctx.message && ctx.message.text.split(':')
-        user = code ? await getUserByCode(code) : null;
-      }
-      if (user && text) {
-        await ctx.telegram.sendMessage(user.telegramId, `Ադմին։ <b><i>${text}</i></b>`, {
-          parse_mode: 'html'
-        });
-      }else{
-        await ctx.reply("Ադմին, դու ինչ որ բան սխալ ես գրել, այս նամակը չի ուղարկվել ոչ մի մասնակիցին");
-      }
+      // let text, user, code;
+      // if(ctx.state.chatTo && ctx.message.text){
+      //   text = ctx.message.text;
+      //   user = await getUserByTelegramId(ctx.state.chatTo);
+      // }else{
+      //   [code, text] = ctx.message && ctx.message.text.split(':')
+      //   user = code ? await getUserByCode(code) : null;
+      // }
+      // if (user && text) {
+      //   await ctx.telegram.sendMessage(user.telegramId, `Ադմին։ <b><i>${text}</i></b>`, {
+      //     parse_mode: 'html'
+      //   });
+      // }else{
+      //   await ctx.reply("Ադմին, դու ինչ որ բան սխալ ես գրել, այս նամակը չի ուղարկվել ոչ մի մասնակիցին");
+      // }
     }
     else {
+//       const sendToAdmin = await getUserByTelegramId(ctx.state.chatTo);
+//
+//       const user = await getUserByTelegramId(ctx.from.id);
+//       if (
+//           user &&
+//           ctx.state.role === "player" &&
+//           sendToAdmin.role === "admin" &&
+//           ctx.state.chatTo &&
+//           ctx.message.text
+//       ) {
+//         const gameButtons = [{ text: "պատասխանել մասնակցին" , callback_data: `oneMessageTo:${user?.telegramId}:${ctx.message.message_id}` }];
+//         if (user.playingClueId && user.playStatus === "playingClue") {
+//           gameButtons.push(getClueApproveButton(ctx.state.userId, "Ընդունել որպես առաջադրանքի պատասխան"));
+//           gameButtons.push(getClueRejectButton(ctx.state.userId, "Մերժել որպես առաջադրանքի պատասխան"));
+//         }
+//
+//         ctx.state.chatTo &&
+//         (await ctx.telegram.sendMessage(
+//             ctx.state.chatTo,
+//             `Հաղորդագրություն մասնակցից։
+// <b><i>${ctx.message.text}</i></b>\n\n
+// User Info:${await getPlayerInfoText(user)}`,
+//             {
+//               parse_mode: "html",
+//               reply_markup: JSON.stringify({ inline_keyboard: [gameButtons] }),
+//             }
+//         ));
+//       } else {
+//         await ctx.reply("Տեղի է ունեցել սխալ, կապնվեք կազմակերպիչների հետ");
+//       }
+
+
       const sendToAdmin = await getUserByTelegramId(ctx.state.chatTo);
 
-      const user = await getUserByTelegramId(ctx.from.id);
+      const user = ctx.session.user;
+      const admin = user.adminId;
+      const scene = ctx.scene.current;
+      const adminTelegramId = ctx.state.chatTo;
       if (
-          user &&
-          ctx.state.role === "player" &&
-          sendToAdmin.role === "admin" &&
-          ctx.state.chatTo &&
+          // user &&
+          // ctx.state.role === "player" &&
+          // /sendToAdmin.role === "admin" &&
+          // ctx.state.chatTo &&
+          adminTelegramId &&
           ctx.message.text
       ) {
-        const gameButtons = [{ text: "պատասխանել մասնակցին" , callback_data: `oneMessageTo:${user?.telegramId}:${ctx.message.message_id}` }];
-        if (user.playingGameId && user.playStatus === "playingGame") {
-          gameButtons.push(getClueApproveButton(ctx.state.userId, "Ընդունել որպես առաջադրանքի պատասխան"));
+
+        const gameButtons = user? [
+          getAnswerToPlayerButton(user.telegramId, ctx.message.message_id)
+        ]:[];
+        // if (user.playingClueId && user.playStatus === "playingClue") {
+        if ((scene.id === "goingToLocationScene" || scene.id === "clueScene"|| scene.id==="levelUpScene") ) {//levelup also, and may be change rto playstatus
+          gameButtons.push(
+              getClueApproveButton(ctx.state.userId, "Ընդունել որպես առաջադրանքի պատասխան")
+          );
           gameButtons.push(getClueRejectButton(ctx.state.userId, "Մերժել որպես առաջադրանքի պատասխան"));
         }
 
-        ctx.state.chatTo &&
+        adminTelegramId &&
         (await ctx.telegram.sendMessage(
-            ctx.state.chatTo,
+            adminTelegramId,
             `Հաղորդագրություն մասնակցից։ 
 <b><i>${ctx.message.text}</i></b>\n\n
 User Info:${await getPlayerInfoText(user)}`,
@@ -72,10 +116,10 @@ User Info:${await getPlayerInfoText(user)}`,
               reply_markup: JSON.stringify({ inline_keyboard: [gameButtons] }),
             }
         ));
+        ctx.replyWithChatAction("typing");
       } else {
         await ctx.reply("Տեղի է ունեցել սխալ, կապնվեք կազմակերպիչների հետ");
       }
-
     }
   } catch (e) {
     console.log(3333, e);
@@ -84,7 +128,7 @@ User Info:${await getPlayerInfoText(user)}`,
 const onFile = async (ctx) => {
   try {
     const file = await ctx.telegram.getFileLink(ctx.message.document.file_id)
-    const game = await getClueById(ctx.state.playingGameId)
+    const game = await getClueById(ctx.state.playingClueId)
     await saveFile({
       fileName: ctx.message.document.file_name,
       fileId: ctx.message.document.file_id,
@@ -125,10 +169,16 @@ const getClueApproveButton = (userTelegramId, approveText="approve") => {
 const getClueRejectButton = (userTelegramId, rejectText="reject") => {
     return {text: `❌ ${rejectText}`, callback_data: `gTo:rejG/uId=${userTelegramId}`};
 }
+const getAnswerToPlayerButton = (userTelegramId, messageId, text="Պատասխանել մասնակցին") =>{
+  return {
+    text,
+    callback_data: `oneMessageTo:${userTelegramId}:${messageId}`,
+  };
+}
 const onPhoto = async (ctx) => {
   try {
     const photo = await ctx.telegram.getFileLink(ctx.message.photo.pop().file_id)
-    const game = await getClueById(ctx.state.playingGameId)
+    const game = await getClueById(ctx.state.playingClueId)
     await saveFile({
       fileName: `${new Date().getTime()}.jpg`,
       fileId: ctx.message.photo.pop().file_id,
@@ -148,19 +198,16 @@ const onPhoto = async (ctx) => {
         parse_mode: 'html'
       })
       const userLocation = await getLocationDataById(ctx.state.user.playingLocationId);
-      await ctx.telegram.sendPhoto(ctx.state.chatTo, ctx.message.photo.pop().file_id)
+      await ctx.telegram.sendPhoto(ctx.state.chatTo, ctx.message.photo.pop().file_id);
+      const gameButtons = [
+        [getAnswerToPlayerButton(ctx.state.userId, ctx.message.message_id),
+          getClueApproveButton(ctx.state.userId),
+          getClueRejectButton(ctx.state.userId)]
+      ];
       if (game && game._id) {
-        const gameButtons = [
-          [{text: `✅ approve`, callback_data: `gTo:appG/uId=${ctx.state.userId}`}, // appG = approve Game, uId = userId,
-            {text: `❌ reject`, callback_data: `gTo:rejG/uId=${ctx.state.userId}`}] // rejG = reject Game, uId = userId,
-        ];
         await ctx.telegram.sendMessage(ctx.state.chatTo, `GameName: ${game.name}\nLocationName: ${userLocation.name}`, {reply_markup: JSON.stringify({inline_keyboard: gameButtons})})
       } else if (ctx.state.user.playStatus === 'goingLocation') {
         const userLocation = await getLocationDataById(ctx.state.user.playingLocationId);
-        const gameButtons = [
-          [{text: `✅ approve`, callback_data: `gTo:appL/uId=${ctx.state.userId}`}, // appL = approve Location, uId = userId,
-            {text: `❌ reject`, callback_data: `gTo:rejL/uId=${ctx.state.userId}`}] // rejL = reject Location, uId = userId,
-        ];
         await ctx.telegram.sendMessage(ctx.state.chatTo, `Going To: ${userLocation.name}`, {reply_markup: JSON.stringify({inline_keyboard: gameButtons})})
       }
     } else {
@@ -170,10 +217,11 @@ const onPhoto = async (ctx) => {
     console.log(3333, e);
   }
 }
+
 const onVideo = async (ctx) => {
   try {
     const video = await ctx.telegram.getFileLink(ctx.message.video.file_id)
-    const game = await getClueById(ctx.state.playingGameId)
+    const game = await getClueById(ctx.state.playingClueId)
     await saveFile({
       fileName: `${new Date().getTime()}.${ctx.message.video.mime_type.split('/').pop()}`,
       fileId: ctx.message.video.file_id,
@@ -256,7 +304,7 @@ const onLocation = async (ctx) => {
 const onlyForward = async (ctx) => {
   try {
     let data = ctx.message.audio && ctx.message.audio.file_id && await ctx.telegram.getFileLink(ctx.message.audio.file_id)
-    const game = await getClueById(ctx.state.playingGameId)
+    const game = await getClueById(ctx.state.playingClueId)
     const file = data || await ctx.telegram.getFileLink(ctx.message.voice.file_id)
     await saveFile({
       fileId: ctx.message && ctx.message.audio && ctx.message.audio.file_id || ctx.message.voice.file_id,
@@ -273,6 +321,18 @@ const onlyForward = async (ctx) => {
     console.log(e);
   }
 }
+
+function showHelpInfo(ctx) {
+  ctx.reply(`
+<b>Help</b>
+/start - start game
+/help - show help info
+/stop - stop game
+/next - next clue
+/prev - prev clue
+`, {parse_mode: 'html'})
+
+}
 module.exports = {
   onLocation,
   onContact,
@@ -281,5 +341,6 @@ module.exports = {
   onPhoto,
   onFile,
   onVideo,
-  onlyForward
+  onlyForward,
+  showHelpInfo
 }

@@ -40,33 +40,46 @@ router.get('/admins', (req, res) => {
   })
 })
 router.post('/', async (req, res) => {
-  const user = await Users.findOne({ $or: [{code: req.body.code}, {verificationCode: req.body.verificationCode}]})
-  if (user && (user.code || user.verificationCode)) {
-    res.status(400).json({error: 'use other code'})
-  } else {
-    // delete req.body.id;
-    const newUser = new Users({...req.body});
-    // const newUser = new Users({...req.body, ...req.body.admin});
-    if (newUser.role === 'player') {
-      newUser.playStatus = 'goingLocation'
+    try {
+
+
+        const user = await Users.findOne({$or: [{code: req.body.code}, {verificationCode: req.body.verificationCode}]})
+        if (user && (user.code || user.verificationCode)) {
+            res.status(500).json({error: 'use other code'})
+        } else {
+            // delete req.body.id;
+            const newUser = new Users({...req.body});
+            // const newUser = new Users({...req.body, ...req.body.admin});
+            if (newUser.role === 'player') {
+                newUser.playStatus = 'goingLocation'
+            }
+            const user = await newUser.save()
+            res.json(user)
+        }
+    } catch (e) {
+        console.log(e)
+        res.status(500).json({error: e.message})
     }
-      const user = await newUser.save()
-    res.json(user)
-  } 
 })
 router.put('/info/:id', async (req, res) => {
   await Users.updateOne({_id: req.params._id}, { $unset: { telegramId: ""} });
   res.json(true)
 })
 router.put('/', async (req, res) => {
-  const user = await Users.findOne({ $or: [{code: req.body.code}, {verificationCode: req.body.verificationCode}]})
-  if (user && (user.code || user.verificationCode) && user._id.toString() !== req.body._id) {
-    res.status(400).json({error: 'use other code'})
-  } else {
-    const user = await Users.findOneAndUpdate({_id: req.body._id}, {...req.body},{new: true});
-    // const user = await Users.updateOne({_id: req.body._id}, {...req.body, ...req.body.admin});
-    res.json(user)
-  }
+    try{
+        const user = await Users.findOne({ $or: [{code: req.body.code}, {verificationCode: req.body.verificationCode}]})
+        if (user && (user.code || user.verificationCode) && user._id.toString() !== req.body._id) {
+            res.status(500).json({error: 'use other code'})
+        } else {
+            const user = await Users.findOneAndUpdate({_id: req.body._id}, {...req.body},{new: true});
+            // const user = await Users.updateOne({_id: req.body._id}, {...req.body, ...req.body.admin});
+            res.json(user)
+        }
+    }catch (e) {
+        console.log(e)
+        res.status(500).json({error: e.message})
+    }
+
 })
 router.delete('/:_id', async (req, res) => {
   await Users.deleteOne({_id: req.params._id})
@@ -98,7 +111,7 @@ const getUserInfo = async (code) => {
           $lookup:
               {
                   from: "clues",
-                  localField: "playingGameId",
+                  localField: "playingClueId",
                   foreignField: "_id",
                   as: "game"
               }
@@ -132,6 +145,10 @@ const getUserByVerificationCode = async (verificationCode) => {
   return Users.findOne({verificationCode});
 }
 
+function setUserPlayStatus(status, userId) {
+    return Users.findOneAndUpdate({_id: userId}, {playStatus: status},  {new: true})
+}
+
 
 module.exports = {
   router,
@@ -142,5 +159,6 @@ module.exports = {
   getUserByTelegramId,
   updateUserByTelegramId,
   getUserByCode,
-    getUserById
+    getUserById,
+    setUserPlayStatus
 };

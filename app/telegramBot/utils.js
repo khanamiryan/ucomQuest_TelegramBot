@@ -1,44 +1,19 @@
 
-import {getPlayerGameAndLocationTimes} from "./game";
-import {getClueById} from "../api/clue/clue";
+const {getUserByTelegramId} = require("../api/user/user");
+const Users = require("../api/user/user.schema");
+const {initUserSession} = require("../docs/constants");
+const latLongRegex =new RegExp(/^((\-?|\+?)?\d+(\.\d+)?),\s*((\-?|\+?)?\d+(\.\d+)?)$/, 'gi') //gi;
 
-export function sendMessageTo(){
 
+async function resetUserSession(ctx) {
+    ctx.session.user = undefined;
+    const user = await getUserByTelegramId(ctx.from.id);
+    // if (user) {
+    await Users.updateOne({ telegramId: ctx.from.id }, { $set: initUserSession });
+    // }
 }
-//
-// export async function updateUserLocationToNextLocation(telegramId, ){
-//     try {
-//         const user = await getUserByTelegramId(telegramId);
-//         const currentLocationId = user.playingLocationId;
-//         const currentLocation = await getLocationDataById(currentLocationId);
-//
-//         const nextLocationId = user.playingLocationSteps[currentLocation]||playingLocationSteps[0];
-//         const nextLocation = await getLocationDataById(currentLocation);
-//         let nextPlayStatus;
-//         if(nextLocation?.needToGoBeforeStart) {
-//             nextPlayStatus = "goingLocation";
-//         }else {
-//             nextPlayStatus = "playingGame";
-//         }
-//         await updateUserByTelegramId({
-//             telegramId: telegramId,
-//             data: {
-//                 playingLocationId: nextLocation,
-//                 playStatus:nextPlayStatus,
-//                 playingGameId: undefined,
-//                 $unset: {playingLocationTime: "", playingGameTime: ""},
-//             }
-//         });
-//     }catch (e) {
-//         console.log("error on updateUser", e.message)
-//     }
-//
-//
-// }
-
-
-
 
 module.exports = {
-    // getPlayerInfoText,
+    resetUserSession,
+    latLongRegex
 }

@@ -58,7 +58,7 @@ const showAdminInfo = async (ctx) => {
   }
 }
 
-const sendMessageToUserAdmin = async (ctx, text) => {
+const sendMessageToUserAdmin = async (userId, text) => {
 
 }
 module.exports = {

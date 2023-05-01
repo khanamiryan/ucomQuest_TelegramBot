@@ -85,7 +85,7 @@ const getUserInfo = async (code) => {
       $lookup:
         {
           from: "games",
-          localField: "playingGameId",
+          localField: "playingClueId",
           foreignField: "_id",
           as: "game"
         }
