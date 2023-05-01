@@ -8,22 +8,19 @@ const Users = require("../../api/user/user.schema");
 const { showGameMenu } = require("../game");
 const { message } = require("telegraf/filters");
 const { resetUserSession } = require("../utils");
+const {texts} = require("../../docs/constants");
 
 const startGame = new Scenes.BaseScene("startGame");
 startGame.enter(async (ctx) => {
-    // ctx.session.user  = await setUserPlayStatus("", ctx.session.user._id);
-    // ctx.session.user = null;
     // await resetUserSession(ctx);
-    // await ctx.scene.enter("resetScene", { from: "startGame" }, true);
-    // ctx.session.user.telegramId = ctx.from.id;
-    return ctx.reply("Բարի գալուստ այս խաղ (duq petq e havaqeq  kod@)");
+    return ctx.replyWithHTML(texts.startGameText);
 });
 startGame.leave(async (ctx) => {
     if (ctx.session.user?.role === "admin") {
         await ctx.reply("Ադմին ես");
         return ctx.scene.enter("adminScene");
     }
-    await ctx.reply("gnnacinq hajrd pul");
+    // await ctx.reply("gnnacinq hajrd pul");
 });
 
 startGame.on(message("text"), async (ctx, next) => {
@@ -44,13 +41,7 @@ startGame.on(message("text"), async (ctx, next) => {
             user = await getUserByTelegramId(userTelegramId);
             ctx.session.user = user;
             if (!user.teamName) {
-                await ctx.reply(
-                    `Շնորհավորում եմ Ձեզ: Դուք խաղի մեջ եք:\nԱյժմ գրեք Ձեր թիմի անունը, որպեսզի շարունակենք մեր խաղը։`
-                );
                 return ctx.scene.enter("createTeamName");
-                //return next(); //??
-
-                // return next();
             } else {
                 await ctx.reply(`Շնորհավորում եմ Ձեզ: Դուք խաղի մեջ եք:\nԱյժմ կարող եք սկսել խաղը։`);
                 await showGameMenu(user.telegramId);

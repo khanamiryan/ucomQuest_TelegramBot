@@ -11,7 +11,7 @@ clueScene.enter(async (ctx) => {
     const updatedUser = await setUserPlayStatus(playStatuses.playingClue, ctx.session.user._id);
     ctx.session.user  = updatedUser;
     const currentClue = ctx.session.currentClueData;
-    await ctx.reply("Բարի գալուստ այս խաղ clue scene");
+    // await ctx.reply("Բարի գալուստ այս խաղ clue scene");
     const user = await startPlayClue(ctx, currentClue._id);
     ctx.session.user = user;
 //may be need to show firs description here??
@@ -47,7 +47,8 @@ clueScene.enter(async (ctx) => {
 
  });
 clueScene.leave((ctx) => {
-    ctx.reply("paka  clue scene");
+    ctx.session.currentClueData = null;
+    // ctx.reply("paka  clue scene");
     //remove user from clue
     //add clue to user
     //same for levelup

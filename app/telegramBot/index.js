@@ -1,9 +1,9 @@
 const { Telegraf, Markup, session, Scenes, Context} = require("telegraf");
 const schedule = require("node-schedule");
-const {bot, store} = require("../bot");
+const {bot, store, ctxObj} = require("../bot");
 
-const { showGameMenu, gameTo, showInfo, sendWelcomeMessage, onMessageTo } = require("./game");
-const interceptor = require("./interceptor");
+const { showGameMenu, gameTo, showInfo, onMessageTo } = require("./game");
+const normalizeScene = require("./normalizeScene");
 const { menuMiddleware: admin, adminPage, showAdminInfo } = require("./admin");
 const {
   onText,
@@ -23,10 +23,12 @@ const { adminScene } = require("./adminScene");
 
 const {getUserById, getUserByTelegramId} = require("../api/user/user");
 const stage = require("./stage");
+const startGame = require("./scenes/startGameScene");
+
 const {enter} = Scenes.Stage;
 
 bot.use(session({ store }));
-// bot.use(session({ store, getSessionKey: () => "318710072:318710072" }));
+//  bot.use(session({ store, getSessionKey: () => "318710072:318710072" }));
 
 
 
@@ -42,6 +44,27 @@ bot.use(session({ store }));
 //
 //   enter("startGame");
 // });
+
+
+// adminScene.use(async (ctx, next) => {
+//   const customSession = session({ store , getSessionKey: () => "318710072:318710072"});
+//
+//   const stage = new Scenes.Stage([
+//       startGame,
+//     createTeamName,
+//     locationScene,
+//     adminScene,
+//     clueScene,
+//     levelUpScene,
+//     finishGameScene,
+//     goingToLocationScene,
+//     resetScene], {defaultSession: customSession});
+//     // const customCtx = new SceneContextScene(ctx.update, ctx.telegram, customSession, ctx.state);
+//   stage.use(customSession());
+//
+//
+// });
+
 bot.use(async (ctx, next) => {
   let user = ctx?.session?.user;
   const telegramId = ctx.from.id||user.telegramId;
@@ -52,7 +75,7 @@ bot.use(async (ctx, next) => {
         const userAdmin  = await getUserById(user.adminId);//todo add checking
         ctx.state.chatTo = userAdmin.telegramId;
         ctx.state.playingLocationId = user.playingLocationId || user.playingLocationSteps[0] || undefined;
-        ctx.state.playingClueId = user.playFingClueId || undefined;
+        ctx.state.playingClueId = user.playingClueId || undefined;
         ctx.state.teamName = user.teamName || '';
       }else {//if admin
         ctx.state.teamName = user.teamName || 'adminTeam';
@@ -64,9 +87,9 @@ bot.use(async (ctx, next) => {
       ctx.state.user = user || {};
       ctx.session.user = user;
 
-
     }
-
+    // for a time. we save all ctx in ctxObj
+    ctxObj[ctx.from.id] = ctx;
 
     return next();
 });
@@ -80,23 +103,30 @@ stage.on("enter", (ctx) => {
 
 
 stage.use(async (ctx, next) => {
-  // console.log("stage", ctx.scene);
-  //   if (!ctx.session.user||ctx.session.user==={}) {
-  //       ctx.scene.enter("startGame");
-  //       return true
-  //   }
-  // return  interceptor(ctx, next);
-
-    const userTelegramId = ctx.from.id;
-     await  interceptor(ctx, next);
+     await normalizeScene(ctx);
      return next();
 });
-// bot.use(async (ctx, next) => {
-//   console.log("ctx message", ctx);
-//   // return ctx.scene.enter("startGame");
-//   // next();
-// });
+bot.use(async (ctx, next)=>{
+  const user = ctx.session.user;
+  if (user?.role === "player") {
+  await ctx.telegram.setMyCommands([
+      { command: "/info", description: "Ինֆորմացիա այս պահի մասին" },
+      { command: "/help", description: "Օգնություն" },
+      { command: "/game", description: "Խաղերի ցանկը" },
+    ]);
+  } else if (user?.role === "admin") {
+    await ctx.telegram.setMyCommands([
+      { command: "/start", description: "Start" },
+      { command: "/info", description: "Ինֆորմացիա այս պահի մասին" },
+      { command: "/help", description: "Օգնություն" },
+      { command: "/admin", description: "Admin" },
+    ]);
+  }
+    return next();
+});
+
 bot.use(stage.middleware());
+
 
 bot.command("start", async (ctx) => {
   if (!ctx.session?.user?.role) {
@@ -105,17 +135,11 @@ bot.command("start", async (ctx) => {
   }
 }); // open Games Men
 
-bot.command("startik", enter("location"));
+
 bot.on("polling_error", (error) => {
   console.log("polling error", error);
 });
-// bot.start((ctx) => ctx.reply('Welcome'))
 
-//bot.use(async (ctx, next) => interceptor(ctx, next));
-
-// bot.command('phone', (ctx) => {
-//   ctx.reply('Send me your number please', { reply_markup: { keyboard: [[{text: '📲 Send phone number', request_contact: true}]], resize_keyboard: true, one_time_keyboard: true  } })
-// })
 bot.command("location", (ctx) => {
   //todo: hayeren
   ctx.reply("Send me your location please", {
@@ -153,6 +177,8 @@ bot.command("help", async (ctx) => {
 
 bot.command("reset", enter("resetScene"));
 
+
+
 adminScene.action(/^gTo/, async (ctx) => gameTo(ctx)); // gameTo
 adminScene.action(/^oneMessageTo/, async (ctx) => onMessageTo(ctx)); // oneMessageT);
 bot.on("text", async (ctx) => onText(ctx));
@@ -180,7 +206,7 @@ bot.use(async (ctx, next) => {
 
 schedule.scheduleJob("* * * * *", () => {
   // schedule.scheduleJob('*/10 * * * * *', () => {
-  //scheduleFunction(bot).then();
+  scheduleFunction(bot).then();
 });
 
 module.exports = bot;

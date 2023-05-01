@@ -1,23 +1,24 @@
 const { Telegraf, Markup, session, Scenes, Stage } = require("telegraf");
-const { getUserByVerificationCode, getUserByTelegramId, getUserInfo, setUserPlayStatus} = require("../api/user/user");
+const {
+    setUserPlayStatus,
+} = require("../api/user/user");
 const Users = require("../api/user/user.schema");
-const { showGameMenu, getPlayerInfoText, gameTo, goToUserNextLevelUpClueUpdateSchema, startPlayClue} = require("./game");
+const {
+
+    startPlayClue,
+} = require("./game");
 const { getLocationDataById } = require("../api/location/location");
 const { message } = require("telegraf/filters");
-const {playStatuses} = require("../docs/constants");
+const { playStatuses } = require("../docs/constants");
 
 
-const { enter, leave } = Scenes.Stage;
-
-// startGame.hears("bob", enter("createTeamName"));
 
 const goingToLocationScene = new Scenes.BaseScene("goingToLocationScene");
 
-
-
 goingToLocationScene.enter(async (ctx) => {
     try {
-        ctx.session.user  = await setUserPlayStatus(playStatuses.goingToLocation, ctx.session.user._id);
+        ctx.session.locationDescriptionShown = false;
+        ctx.session.user = await setUserPlayStatus(playStatuses.goingToLocation, ctx.session.user._id);
 
         if (!ctx.session.user) {
             return ctx.scene.enter("startGame");
@@ -28,12 +29,10 @@ goingToLocationScene.enter(async (ctx) => {
             return ctx.scene.enter("locationScene");
         }
 
-        if (location.needToGoBeforeStart) {
-            await ctx.reply(
-                `Սիրելի <b>${ctx.message.text}</b> թիմի անդամներ խնդրում ենք ուղարկել նկար Ձեր թիմից, որպեսզի սկսեք խաղը`,
-                { parse_mode: "HTML" }
-            );
-        }
+        await ctx.reply(
+            `Սիրելի <b>${user.teamName}</b> թիմի անդամներ խնդրում ենք ուղարկել նկար Ձեր թիմից, որպեսզի սկսեք խաղը`,
+            { parse_mode: "HTML" }
+        );
     } catch (e) {
         console.log(e);
     }
@@ -42,21 +41,24 @@ goingToLocationScene.on(message("text"), async (ctx, next) => {
     next();
 });
 goingToLocationScene.hears("goto", async (ctx, next) => {
-    return ctx.scene.enter("locationScene");
+    return ctx.scene.enter("locationScene");//????
 });
 
 goingToLocationScene.leave(async (ctx) => {
-    return await ctx.reply("paka գալուստ այս խաղ goingToLocationScene scene");
+     await ctx.reply("Դուք հաջողությամբ հասաք նշված վայր։");
+    if(!ctx.session.locationDescriptionShown) {
+        const location = await getLocationDataById(ctx.session.user.playingLocationId);
+        location.startDescription && (await ctx.replyWithHTML(location.startDescription));
+        ctx.session.locationDescriptionShown = true;
+    }
 });
 goingToLocationScene.command("game", async (ctx) => {
-  await ctx.reply("You are not allowed yet, send the picture, that you are there")
-})
-goingToLocationScene.on('callback_query', async (ctx) => {
+    await ctx.reply("Դուք պետք ե հասնեք նշված վայր։");
+});
+goingToLocationScene.on("callback_query", async (ctx) => {
     // Using context shortcut
     return await ctx.answerCbQuery();
-
 });
-
 
 const levelUpScene = new Scenes.BaseScene("levelUpScene");
 // levelUpScene.use(async (ctx, next) => {
@@ -71,45 +73,40 @@ const levelUpScene = new Scenes.BaseScene("levelUpScene");
 //
 // }
 levelUpScene.enter(async (ctx) => {
-    ctx.session.user  = await setUserPlayStatus(playStatuses.playingLevelUp, ctx.session.user._id);
-    await ctx.reply("Բարի գալուստ այս խաղ levelUpScene scene");
+    ctx.session.user = await setUserPlayStatus(playStatuses.playingLevelUp, ctx.session.user._id);
+    // await ctx.reply("Բարի գալուստ այս խաղ levelUpScene scene");
     const currentClue = ctx.session.currentClueData;
     const user = await startPlayClue(ctx, currentClue._id);
     ctx.session.user = user;
 
-
     // await enterToLevelUp(ctx.session.user.telegramId);
     //may be need to show firs description here??
     //play Clue levelup (description and all)
-
 });
 levelUpScene.command("game", async (ctx, next) => {
-   ctx.reply("Այժ, դուք LevelUp առաջադրանքի մեջ եք");
-   next();
+    ctx.reply("Այժ, դուք LevelUp առաջադրանքի մեջ եք");
+    next();
 });
 levelUpScene.leave((ctx) => {
-    ctx.reply("paka գալուստ այս խաղ levelUpScene scene (desc)");
+    ctx.session.currentClueData = null;
+    // ctx.reply("paka գալուստ այս խաղ levelUpScene scene (desc)");
     //remove user from levelup
     //remove location points from user
     //go to next location or finish game
-
 });
 
 const finishGameScene = new Scenes.BaseScene("finishGameScene");
 finishGameScene.enter(async (ctx) => {
-    ctx.session.user  = await setUserPlayStatus(playStatuses.finishedGame, ctx.session.user._id);
-    ctx.reply("Ավարտվեց խաղը")
+    ctx.session.user = await setUserPlayStatus(playStatuses.finishedGame, ctx.session.user._id);
+    // ctx.reply("Ավարտվեց խաղը");
+    await ctx.telegram.sendMessage(userId, "Շնորհավորում եմ դուք հաղթահարել եք ամբողջ խաղը։");
 });
-
-
 
 // const enterToLocationScene = async (userTelegramId) => {//this function can also use by admin for user
 //     // ctx.session.user  = await setUserPlayStatus(playStatuses.inLocation, userId);
 //     //change user session, not admin
 //    // await showGameMenu(userTelegramId);
 // }
-
-
 
 module.exports = {
     levelUpScene,

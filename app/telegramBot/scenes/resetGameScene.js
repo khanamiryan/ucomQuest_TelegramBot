@@ -6,7 +6,7 @@ resetScene.enter(async (ctx) => {
     await ctx.reply("resetScene");
     ctx.session.user = null;
 
-    await    resetUserSession(ctx)
+    await resetUserSession(ctx)
     return await ctx.scene.enter("startGame");
 
 });

@@ -11,4 +11,7 @@ const store = Mongo({
 });
 
 
-module.exports = {bot, store};
+const ctxObj = { };
+
+
+module.exports = {bot, store, ctxObj};

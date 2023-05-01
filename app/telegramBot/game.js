@@ -10,10 +10,10 @@ const moment = require("moment");
 const { getFile, getFileType } = require("../api/file/file");
 const { Clues } = require("../api/clue/clue");
 
-const { playStatuses,  gameConfig, clueTypes} = require("../docs/constants");
+const { playStatuses, gameConfig, clueTypes } = require("../docs/constants");
 
 const { sendMessageToUserAdmin } = require("./admin");
-
+const { ctxObj } = require("../bot");
 
 const bot = new Telegraf(process.env.botToken, {
     polling: true,
@@ -125,15 +125,14 @@ const showGame = async ({ ctx, text: gametext }) => {
 };
 const { enter, leave } = Scenes.Stage;
 
-const handleFileImage = async (ctx, {source, filename}) => {
+const handleFileImage = async (ctx, { source, filename }) => {
     try {
-
         return true;
-    }catch (e) {
+    } catch (e) {
         console.log("handleFileImage", "ERROR: " + e);
         return false;
     }
-}
+};
 
 /**
  * Get filename  of the file in server and send to user
@@ -153,17 +152,17 @@ const sendFileToTelegram = async (ctx, filename) => {
                 await ctx.replyWithVideo({ source, filename });
                 break;
             default:
-                await ctx.replyWithDocument({source, filename});
+                await ctx.replyWithDocument({ source, filename });
         }
         return true;
-    }catch (e) {
+    } catch (e) {
         console.log("handleFile", "ERROR: " + e);
         return false;
     }
-}
+};
 const startPlayClue = async (ctx, clueId) => {
     try {
-        const gameData =  await getClueById(clueId);
+        const gameData = await getClueById(clueId);
         if (gameData.nowPlaying >= gameData.maxPlayerCount) {
             await ctx.reply(`Այս խաղում ազատ տեղեր չեն մնացել`, {
                 parse_mode: "HTML",
@@ -190,10 +189,9 @@ const startPlayClue = async (ctx, clueId) => {
             //get file from server and send to user
             await sendFileToTelegram(ctx, gameData.fileName);
             //i dont know what it is doing
-            try{
-                await bot.telegram
-                    .deleteMessage(ctx.state.userId, message.message_id)
-            }catch (e) {
+            try {
+                await bot.telegram.deleteMessage(ctx.state.userId, message.message_id);
+            } catch (e) {
                 console.log(2222, err);
                 await Messages.updateMany(
                     { userId: ctx.state.userId, messagesType: "delete" },
@@ -201,8 +199,8 @@ const startPlayClue = async (ctx, clueId) => {
                 );
             }
         }
-            //todo should it return the user?
-        const updatedUser  = await startPlayingClueUpdateSchema(ctx.state.userId, gameData);
+        //todo should it return the user?
+        const updatedUser = await startPlayingClueUpdateSchema(ctx.state.userId, gameData);
         return updatedUser;
     } catch (e) {
         console.log("startPlayClue", "ERROR: " + e);
@@ -227,7 +225,10 @@ async function startPlayingClueUpdateSchema(userTelegramId, clueData) {
             },
         }
     );
-    const playStatus = clueData.clueType === clueTypes.standardGame? playStatuses.playingClue: playStatuses.playingLevelUp;
+    const playStatus =
+        clueData.clueType === clueTypes.standardGame
+            ? playStatuses.playingClue
+            : playStatuses.playingLevelUp;
     const user = await Users.findOneAndUpdate(
         { telegramId: userTelegramId },
         {
@@ -260,12 +261,9 @@ const playClueCallbackTelegramHandle = async ({ ctx, text }) => {
             const [, locationGame] = text.split("/");
             const [, clueId] = locationGame.split("=");
 
-
-
             // ctx.session.user = user;
             ctx.session.currentClueData = await getClueById(clueId);
             return ctx.scene.enter("clueScene");
-
 
             // const gameData = await Clue.findById(locationGameId);
 
@@ -363,7 +361,6 @@ const playClueCallbackTelegramHandle = async ({ ctx, text }) => {
             //     }
             // }
 
-
             // return await enter("clueScene");
         }
     } catch (e) {
@@ -386,7 +383,7 @@ const showGameMenu = async (userTelegramId) => {
         if (!location) {
             throw new Error("Location not found for the user");
         }
-        if (user.playStatus === "finishGames") {
+        if (user.playStatus === playStatuses.finishedGame) {
             await bot.telegram.sendMessage(
                 userTelegramId, //todo use mangoose
                 "Դուք Վերջացրեցիք բոլոր խաղերը!!!"
@@ -422,7 +419,7 @@ const showGameMenu = async (userTelegramId) => {
 
             const games = await getUserAvailableCluesList(userGames, clueType);
 
-            if (clueType === "levelUp" && gameConfig.choosingLevelUpGame){
+            if (clueType === "levelUp" && gameConfig.choosingLevelUpGame) {
                 //todo or move to anoter plase
                 const levelupGame = gameButtonsArray[0];
             } else {
@@ -461,9 +458,9 @@ const showGameMenu = async (userTelegramId) => {
         console.log(1111, e);
     }
 };
-const getUserAvailableCluesList = async (user, clueType) =>{
+const getUserAvailableCluesList = async (user, clueType) => {
     const clues = await Clues.aggregate([
-        {$match: {locationId: user.playingLocationId}},
+        { $match: { locationId: user.playingLocationId } },
         {
             $match: {
                 clueCode: {
@@ -480,12 +477,12 @@ const getUserAvailableCluesList = async (user, clueType) =>{
         },
         {
             $match: {
-                $expr: {$gt: ["$maxPlayersSameTime", "$nowPlaying"]},
+                $expr: { $gt: ["$maxPlayersSameTime", "$nowPlaying"] },
             },
         },
     ]);
     return clues;
-}
+};
 
 const approveClueOrLocation = async ({ ctx, text }) => {
     // ctx.deleteMessage().catch((err) => {
@@ -494,11 +491,12 @@ const approveClueOrLocation = async ({ ctx, text }) => {
 
     const [, user] = text.split("/");
     const [, userId] = user.split("=");
+    //add clueid or location id in the coming text
     const player = await getUserByTelegramId(userId);
+    const userCtx = ctxObj[userId];
 
     // await changeUserScene(ctx,userId, "start");
     if (player.playStatus === playStatuses.goingToLocation) {
-
         const locationData = await getLocationDataById(player.playingLocationId);
         //start clue
         await updateUserByTelegramId({
@@ -536,13 +534,16 @@ const approveClueOrLocation = async ({ ctx, text }) => {
                     parse_mode: "HTML",
                 }
             );
+            await userCtx?.scene.enter("locationScene");
+            // userCtx && (await useLocationSceneMiddleware(userCtx));
             //here shall be enter to locationScene
         } catch (e) {
             console.log("error stopping game", e);
         }
     } else if (player.playStatus === playStatuses.playingLevelUp) {
         const playingLocationStep = player.playingLocationSteps.indexOf(player.playingLocationId);
-        if (playingLocationStep < player.playingLocationSteps.length - 1) { // <=   ???
+        if (playingLocationStep < player.playingLocationSteps.length - 1) {
+            // <=   ???
             // if playing in last location
 
             // const nextLocationId = player.playingLocationSteps[playingLocationStep + 1];
@@ -554,16 +555,14 @@ const approveClueOrLocation = async ({ ctx, text }) => {
                 "Շնորհավորում եմ դուք հաղթահարել եք այս տարածքի խաղերը։\nՀաջորդիվ ուղևորվեք..."
             );
 
-            // locationScene (next scene)
+            userCtx?.scene.enter("locationScene");
+            // userCtx && (await useLocationSceneMiddleware(userCtx));
 
             // }
         } else {
-
             await finishTheGameUpdateSchema(player);
-            await ctx.telegram.sendMessage(
-                userId,
-                "Շնորհավորում եմ դուք հաղթահարել եք ամբողջ խաղը։"
-            );
+
+            ctxObj[userId]?.scene.enter("finishGameScene");
 
             //finish the game scene
         }
@@ -643,7 +642,9 @@ const stopPlayingClue = async (user, successful = true) => {
 const stopLocationOfUser = async (user) => {
     const location = await getLocationDataById(user.playingLocationId);
     const playingLocationStep = user.playingLocationSteps.indexOf(user.playingLocationId);
-    const nextPlayStatus = location.needToGoBeforeStart ? playStatuses.goingToLocation : playStatuses.inLocation;
+    const nextPlayStatus = location.needToGoBeforeStart
+        ? playStatuses.goingToLocation
+        : playStatuses.inLocation;
     const nextLocationId = user.playingLocationSteps[playingLocationStep + 1] || null;
     await updateUserByTelegramId({
         telegramId: user.telegramId,
@@ -662,7 +663,8 @@ const stopLocationOfUser = async (user) => {
 const stopLocationAndGoToNext = async (player, successful = true) => {
     // const player = await getUserByTelegramId(playerTelegramId);
     try {
-        if (!successful || player.playingClueId) {//todo check the logic
+        if (!successful || player.playingClueId) {
+            //todo check the logic
             //we are stopping the game, if we are playing, because we are going to next location
             await stopPlayingClue(player, false);
         }
@@ -673,7 +675,8 @@ const stopLocationAndGoToNext = async (player, successful = true) => {
             //may be set to 0
             throw new Error("goToNextLocationError: playingLocationStep<0");
         }
-        if (playingLocationStep < player.playingLocationSteps.length - 1) {/// meay be <= ??
+        if (playingLocationStep < player.playingLocationSteps.length - 1) {
+            /// meay be <= ??
             await stopLocationOfUser(player);
         } else {
             await finishTheGameUpdateSchema(player);
@@ -695,7 +698,6 @@ const goToUserNextLevelUpClueUpdateSchema = async (playerTelegramId) => {
             locationId: player.playingLocationId,
         });
         await startPlayingClueUpdateSchema(playerTelegramId, levelUpClue);
-
 
         return levelUpClue;
         // await updateUserByTelegramId({
@@ -728,7 +730,7 @@ async function finishTheGameUpdateSchema(player) {
     // player = await stopLocationAndGoToNext(player);
     // await stopLocationOfUser(player);
 
-     await updateUserByTelegramId({
+    await updateUserByTelegramId({
         telegramId: player.telegramId,
         data: {
             $inc: {
@@ -877,9 +879,9 @@ const goToLevelUp = async (userTelegramId, showGameMenuParam = true) => {
         }
     );
 
-
     if (gameConfig.choosingLevelUpGame) {
-        await updateUserByTelegramId({//todo when start to implement choosing, remove or change this
+        await updateUserByTelegramId({
+            //todo when start to implement choosing, remove or change this
             telegramId: userTelegramId,
             data: {
                 playStatus: playStatuses.playingLevelUp,
@@ -1059,6 +1061,30 @@ const cancelGameTimeout = async ({ player, ctx }) => {
     );
     await showGameMenu(player.telegramId);
 };
+
+const useLocationSceneMiddleware = async (ctx, next) => {
+    const userId = ctx.session.user._id;
+    const userTelegramId = ctx.session.user.telegramId;
+    const location = await getLocationDataById(ctx.session.user.playingLocationId);
+    ctx.scene.state.location = location; //todo may be will usable
+
+    const userLocationPoint = ctx.session.user.locationPoint;
+
+    //if user have point for level up
+    if (userLocationPoint >= location.finishPoint) {
+        if (gameConfig.choosingLevelUpGame === false) {
+            const levelUpClue = await goToUserNextLevelUpClueUpdateSchema(userTelegramId);
+            ctx.session.currentClueData = levelUpClue;
+            return ctx.scene.enter("levelUpScene");
+        }
+        // await goToUserNextLevelUpClueUpdateSchema(ctx.session.user.telegramId);
+        // return ctx.scene.enter("levelUpScene");
+        //todo may be show level up menu need to be separate?
+        //todo may be here need return
+        await showGameMenu(userTelegramId);
+    }
+};
+
 module.exports = {
     getPlayerGameAndLocationTimes,
     checkUserGameStatus,
@@ -1075,5 +1101,6 @@ module.exports = {
     stopLocationAndGoToLevelUp,
     goToLevelUp,
     goToUserNextLevelUpClueUpdateSchema,
-    startPlayClue
+    startPlayClue,
+    useLocationSceneMiddleware,
 };
