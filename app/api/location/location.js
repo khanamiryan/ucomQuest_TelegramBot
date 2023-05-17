@@ -41,9 +41,13 @@ router.get('/', async (req, res) => {
   const locations = await getLocation()
   res.json(locations)
 })
-router.delete('/:id', async (req, res) => {
-  await Location.deleteOne({_id: req.params._id})
-  res.json(true)
+router.delete('/:_id', async (req, res) => {
+  try {
+    await Location.deleteOne({_id: req.params._id})
+    res.json(true)
+  } catch (e){
+    res.json(false);
+  }
 })
 
 // router.post('/addGameToLocation', async (req, res) => {

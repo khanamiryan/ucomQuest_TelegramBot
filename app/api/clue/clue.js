@@ -63,16 +63,31 @@ router.get('/', async (req, res) => {
   // }))
   res.json(clues)
 })
-router.delete('/:id', async (req, res) => {
-  await Clues.findByIdAndDelete({_id: req.params._id})
-  res.json(true)
+router.delete('/:_id', async (req, res) => {
+  try {
+    await Clues.findByIdAndDelete({_id: req.params._id})
+    res.json(true)
+  }catch (e) {
+    console.log(e)
+    res.json(false)
+  }
 })
 
 const getClueById = (id) => {
-  return Clues.findById(id)
+  try {
+    return Clues.findById(id)
+  }catch (e) {
+    console.log(e)
+    return null
+  }
 }
 const updateClue = (filter, data) => {
-  return Clues.updateOne(filter, data)
+  try {
+    return Clues.updateOne(filter, data)
+  }catch (e) {
+    console.log(e)
+    return null
+  }
 }
 
 module.exports = {
