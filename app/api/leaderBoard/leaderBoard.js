@@ -3,6 +3,35 @@ const Users = require('../user/user.schema')
 const router = express.Router()
 
 router.get('/', async (req, res) => {
+    try {
+        const users = await Users.find({ role: 'player', telegramId: { $exists: true } })
+            .sort({ total: -1 });
+
+        const percent = await Users.aggregate([
+            {
+                $match: { role: 'player', telegramId: { $exists: true } }
+            },
+            {
+                $group: {
+                    _id: null,
+                    max: { $max: "$total" }
+                }
+            }
+        ]);
+
+        const modifiedUsers = users.map(user => {
+            const userObj = user.toObject();
+            userObj.percent = 77 / (percent && percent[0] && percent[0].max) || 1;
+            // delete userObj.adminId;
+            return userObj;
+        });
+
+        res.json(modifiedUsers);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+router.get('/', async (req, res) => {
   const aggregate = [
     {
       $match: {
@@ -35,13 +64,13 @@ router.get('/', async (req, res) => {
     {
       $addFields: {locationData: { $arrayElemAt: [ "$location", 0 ] }}
     },
-    {
-      $addFields: {locationName: "$locationData.name" },
-    },
-    {$project: {location: 0}},
-    { $addFields: {  total: { $add: [ "$locationPoint", "$allPoint" ] }} },
-    { $sort : { total : -1 } },
-  ]
+      {
+          $addFields: {locationName: "$locationData.name" },
+      },
+      {$project: {location: 0}},
+      // { $addFields: {  total: { $add: [ "$locationPoint", "$allPoint" ] }} },
+      { $sort : { total : -1 } },
+  ];
   const percent = await Users.aggregate([...aggregate,     {
     $group : {
       _id: null,
@@ -62,6 +91,8 @@ router.get('/admins', (req, res) => {
     res.json(r)
   })
 })
+
+
 
 const getUserInfo = async (code) => {
   return Users.aggregate([

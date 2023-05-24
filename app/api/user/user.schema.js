@@ -58,19 +58,19 @@ const userSchema = mongoose.Schema(
       // playingLocationStepsNames: {
       //   type: [String]
       // },
-      playingClueId: {
-        type: mongoose.Schema.Types.ObjectId,
-        required: false,
-      },
+      // playingClueId: {
+      //   type: mongoose.Schema.Types.ObjectId,
+      //   required: false,
+      // },
       playingClueTime: {
         type: Date,
       },
       playingLocationTime: {
         type: Date,
       },
-      playedGames: {
-        type: [String],
-      },
+      // playedGames: {
+      //   type: [String],
+      // },
       playStatus: {
         //todo change to enum or const
         type: String,
@@ -101,9 +101,7 @@ const userSchema = mongoose.Schema(
       timestamps: true,
     }
 );
-userSchema.set("toJSON", {
-  virtuals: true,
-});
+
 
 // userSchema.virtual('adminChatId').get(async function(){
 //   if(this.role === 'player') {
@@ -114,6 +112,13 @@ userSchema.set("toJSON", {
 //   }
 // });
 
+userSchema.virtual("playingLocationId2",{
+    ref: 'Locations', // reference to Report model
+    localField: 'playingLocationId', // matches field Comment Schema has named 'replies'
+    // match: { _id: this.playingLocationSteps }, // matches field Comment Schema has named 'replies'
+    foreignField: '_id', // matches field Report Schema has named 'comment' (foreign key in Report model)
+    justOne: true, // this is going to return all related documents, not just one (just like reportCount)
+})
 userSchema
     .virtual("playingLocationId")
     .get(function () {
@@ -152,6 +157,12 @@ userSchema
 //   this.populate('currentLocation');
 // })
 
+userSchema.set("toJSON", {
+    virtuals: true,
+});
+userSchema.set("toObject", {
+    virtuals: true,
+});
 userSchema.pre("post", async function (next) {
   if (this.role !== "player") return next();
 
@@ -164,4 +175,8 @@ userSchema.pre("post", async function (next) {
     }
   }
 });
-module.exports = mongoose.model("Users", userSchema);
+
+const Users = mongoose.model("Users", userSchema);
+
+
+module.exports = Users;
