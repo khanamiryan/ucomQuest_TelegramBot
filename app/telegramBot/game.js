@@ -27,32 +27,38 @@ const deleteMessagesFunction = async (userId) => {
         status: "active",
     });
     if (deleteMessages.length) {
-        for (const deleteMessage of deleteMessages) {
-            bot.telegram
-                .deleteMessage(userId, deleteMessage.messageId)
-                .then()
-                .catch(async (err) => {
-                    console.log(2222, err);
-                    await Messages.updateMany(
-                        {
-                            userId,
-                            messagesType: "delete",
-                        },
-                        {
-                            status: "deleted",
-                        }
-                    );
-                });
-        }
-        await Messages.updateMany(
-            {
-                userId,
-                messagesType: "delete",
-            },
-            {
-                status: "deleted",
+        try {
+            for (const deleteMessage of deleteMessages) {
+                bot.telegram
+                    .deleteMessage(userId, deleteMessage.messageId)
+                    .then()
+                    .catch(async (err) => {
+                        console.log(2222, err);
+                        await Messages.updateMany(
+                            {
+                                userId,
+                                messagesType: "delete",
+                            },
+                            {
+                                status: "deleted",
+                            }
+                        );
+                    });
             }
-        );
+            await Messages.updateMany(
+                {
+                    userId,
+                    messagesType: "delete",
+                },
+                {
+                    status: "deleted",
+                }
+            );
+        }catch (e) {
+            console.log(3333, e);
+
+        }
+
     }
 };
 
@@ -465,7 +471,7 @@ const getUserAvailableCluesList = async (user, clueType) => {
             $match: {
                 clueCode: {
                     $not: {
-                        $in: user.playedGames,
+                        $in: user.playedGames||[],
                     },
                 },
             },
@@ -477,7 +483,10 @@ const getUserAvailableCluesList = async (user, clueType) => {
         },
         {
             $match: {
-                $expr: { $gt: ["$maxPlayersSameTime", "$nowPlaying"] },
+                $or: [
+                    { $expr: { $gt: ["$maxPlayersSameTime", "$nowPlaying"] } },
+                    { maxPlayersSameTime: 0 },
+                ],
             },
         },
     ]);
@@ -580,8 +589,9 @@ const approveClueOrLocation = async ({ ctx, text }) => {
 const stopPlayingClue = async (user, successful = true) => {
     try {
         // const user = await getUserByTelegramId(playerTelegramId);
-        const clue = await getClueById(user.playingClueId);
+
         if (user.playingClueId) {
+            const clue = await getClueById(user.playingClueId);
             await updateClue(
                 { _id: user.playingClueId },
                 {
@@ -891,7 +901,13 @@ const goToLevelUp = async (userTelegramId, showGameMenuParam = true) => {
         //todo find a way to show game menu for levelups
         showGameMenuParam && (await showGameMenu(userTelegramId));
     } else {
-        await goToUserNextLevelUpClueUpdateSchema(userTelegramId);
+         //stopLocationAndGoToLevelUp(userTelegramId);
+        const levelUpClue = await goToUserNextLevelUpClueUpdateSchema(userTelegramId);
+        // /await showGameMenu(userTelegramId);
+        await ctxObj[userTelegramId]?.scene.enter("locationScene");
+        // console.log(ctxObj[userTelegramId]?.session?.currentClueData )
+        // ctxObj[userTelegramId]?.scene.enter("levelUpScene");
+
     }
     return true;
 };
@@ -929,7 +945,7 @@ const checkUserGameStatus = async (userTelegramId, showGameMenuParam = true) => 
         //     return false;
         // }
         const playStatus = await user.playStatus;
-        if (playStatus === "playingClue" && nextPlayStatus === "playingLevelUp") {
+        if ((playStatus===playStatuses.inLocation||playStatus === playStatuses.playingClue) && nextPlayStatus === "playingLevelUp") {
             await goToLevelUp(userTelegramId, showGameMenuParam);
             // await updateUserByTelegramId({
             //     telegramId: userTelegramId,

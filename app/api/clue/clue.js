@@ -13,7 +13,7 @@ const storageConfig = multer.diskStorage({
 const upload = multer({ dest: 'public/', storage: storageConfig })
 router.post('/',  upload.single('file'), async (req, res) => {
   let body = req.body;
-  console.log('body', body)
+  // console.log('body', body)
   if (req.file && req.file.filename) {
     body.fileName = req.file.filename
   }

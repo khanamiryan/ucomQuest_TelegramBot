@@ -5,11 +5,12 @@ const {
 const Users = require("../api/user/user.schema");
 const {
 
-    startPlayClue,
+    startPlayClue, getPlayerGameAndLocationTimes,
 } = require("./game");
 const { getLocationDataById } = require("../api/location/location");
 const { message } = require("telegraf/filters");
 const { playStatuses } = require("../docs/constants");
+const {getClueById} = require("../api/clue/clue");
 
 
 
@@ -53,7 +54,7 @@ goingToLocationScene.leave(async (ctx) => {
     }
 });
 goingToLocationScene.command("game", async (ctx) => {
-    await ctx.reply("Դուք պետք ե հասնեք նշված վայր։");
+    await ctx.reply("Դուք պետք է հասնեք նշված վայր։");
 });
 goingToLocationScene.on("callback_query", async (ctx) => {
     // Using context shortcut
@@ -76,7 +77,7 @@ levelUpScene.enter(async (ctx) => {
     ctx.session.user = await setUserPlayStatus(playStatuses.playingLevelUp, ctx.session.user._id);
     // await ctx.reply("Բարի գալուստ այս խաղ levelUpScene scene");
     const currentClue = ctx.session.currentClueData;
-    const user = await startPlayClue(ctx, currentClue._id);
+    const user = await startPlayClue(ctx, currentClue?._id);
     ctx.session.user = user;
 
     // await enterToLevelUp(ctx.session.user.telegramId);
@@ -84,8 +85,32 @@ levelUpScene.enter(async (ctx) => {
     //play Clue levelup (description and all)
 });
 levelUpScene.command("game", async (ctx, next) => {
-    ctx.reply("Այժ, դուք LevelUp առաջադրանքի մեջ եք");
-    next();
+    ctx.reply("Այժմ, դուք LevelUp առաջադրանքի մեջ եք");
+    // const user = await getUserByTelegramId(userTelegramId);
+    const user  = ctx.session.user;
+    const userTelegramId = user.telegramId;
+
+    const timesInfo = await getPlayerGameAndLocationTimes(userTelegramId);
+
+    let message = ``;
+    const gameData = await getClueById(user.playingClueId);
+    if (gameData) {
+        message += `Ձեր առաջադրանքի անունն է <b><i>${gameData.name}</i></b>\n`;
+        message += `Նկարագրություն\n<b><i>${gameData.fullDescription}</i></b>\n`;
+        if (timesInfo.gameTime > 0 && timesInfo.gameTime < 60) {
+            message += `Հաղթահարելու համար մնացել է <b><i>${timesInfo.gameTime}</i></b> րոպե\n`;
+        }
+        //  message += `<b>Տևողությունը ${gameData.playTime} րոպե</b>\n`
+    }
+
+    await ctx.telegram.sendMessage(
+        userTelegramId,
+        message,
+        {
+            parse_mode: "HTML",
+        }
+    );
+    // next();
 });
 levelUpScene.leave((ctx) => {
     ctx.session.currentClueData = null;
@@ -97,9 +122,18 @@ levelUpScene.leave((ctx) => {
 
 const finishGameScene = new Scenes.BaseScene("finishGameScene");
 finishGameScene.enter(async (ctx) => {
-    ctx.session.user = await setUserPlayStatus(playStatuses.finishedGame, ctx.session.user._id);
-    // ctx.reply("Ավարտվեց խաղը");
-    await ctx.telegram.sendMessage(userId, "Շնորհավորում եմ դուք հաղթահարել եք ամբողջ խաղը։");
+    try {
+        ctx.session.user = await setUserPlayStatus(playStatuses.finishedGame, ctx.session.user._id);
+        // ctx.reply("Ավարտվեց խաղը");
+        const userId = ctx.session.user.telegramId;
+        // await ctx.telegram.setMyCommands(userId, [{ command: '/help', description: 'Help' }]);
+
+        await ctx.telegram.sendMessage(userId, "Շնորհավորում եմ դուք հաղթահարել եք ամբողջ խաղը։");
+
+    }
+    catch (e) {
+        console.log(e);
+    }
 });
 
 // const enterToLocationScene = async (userTelegramId) => {//this function can also use by admin for user

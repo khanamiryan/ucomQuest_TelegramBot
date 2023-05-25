@@ -3,7 +3,6 @@ const { Scenes } = require("telegraf");
 const {
     gameTo,
     showGameMenu,
-    goToUserNextLevelUpClueUpdateSchema,
     useLocationSceneMiddleware,
 } = require("../game");
 

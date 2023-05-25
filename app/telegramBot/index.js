@@ -116,10 +116,11 @@ bot.use(async (ctx, next)=>{
     ]);
   } else if (user?.role === "admin") {
     await ctx.telegram.setMyCommands([
-      { command: "/start", description: "Start" },
+      // { command: "/start", description: "Start" },
       { command: "/info", description: "Ինֆորմացիա այս պահի մասին" },
       { command: "/help", description: "Օգնություն" },
-      { command: "/admin", description: "Admin" },
+      { command: "/game", description: "Խաղերի ցանկը" },
+      // { command: "/admin", description: "Admin" },
     ]);
   }
     return next();

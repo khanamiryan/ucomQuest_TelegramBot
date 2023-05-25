@@ -324,12 +324,8 @@ const onlyForward = async (ctx) => {
 
 function showHelpInfo(ctx) {
   ctx.reply(`
-<b>Help</b>
-/start - start game
-/help - show help info
-/stop - stop game
-/next - next clue
-/prev - prev clue
+<b>Կապնվեք մեր ադմինների հետ</b>
+
 `, {parse_mode: 'html'})
 
 }

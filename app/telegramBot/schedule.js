@@ -29,8 +29,8 @@ const scheduleFunction = async (bot) => {
     //todo : motaka xaxin sa petq chi, dra hamar toxum enq kisat
     //await checkLocationTimeAlmostOver(bot);
     // await checkLocationTimeOver(bot);
-    await checkClueTimeAlmostOver(bot);
-    await checkClueTimeOver(bot);
+    // await checkClueTimeAlmostOver(bot);
+    // await checkClueTimeOver(bot);
   } catch (e) {
     console.log("schedule", "ERROR", e);
   }

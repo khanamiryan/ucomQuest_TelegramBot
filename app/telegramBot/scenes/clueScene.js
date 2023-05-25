@@ -35,6 +35,9 @@ clueScene.enter(async (ctx) => {
              message += `Հաղթահարելու համար մնացել է <b><i>${timesInfo.gameTime}</i></b> րոպե\n`;
          }
          //  message += `<b>Տևողությունը ${gameData.playTime} րոպե</b>\n`
+     }else{
+            message += `Դուք դեռ չեք սկսել ոչ մի առաջադրանք\n`;
+            await ctx?.scene.enter("locationScene");
      }
 
      await ctx.telegram.sendMessage(

@@ -58,10 +58,10 @@ const userSchema = mongoose.Schema(
       // playingLocationStepsNames: {
       //   type: [String]
       // },
-      // playingClueId: {
-      //   type: mongoose.Schema.Types.ObjectId,
-      //   required: false,
-      // },
+      playingClueId: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: false,
+      },
       playingClueTime: {
         type: Date,
       },
