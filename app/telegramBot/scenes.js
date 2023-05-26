@@ -46,7 +46,7 @@ goingToLocationScene.hears("goto", async (ctx, next) => {
 });
 
 goingToLocationScene.leave(async (ctx) => {
-     await ctx.reply("Դուք հաջողությամբ հասաք նշված վայր։");
+     // await ctx.reply("Դուք հաջողությամբ հասաք նշված վայր։");
     if(!ctx.session.locationDescriptionShown) {
         const location = await getLocationDataById(ctx.session.user.playingLocationId);
         location.startDescription && (await ctx.replyWithHTML(location.startDescription));
@@ -101,6 +101,8 @@ levelUpScene.command("game", async (ctx, next) => {
             message += `Հաղթահարելու համար մնացել է <b><i>${timesInfo.gameTime}</i></b> րոպե\n`;
         }
         //  message += `<b>Տևողությունը ${gameData.playTime} րոպե</b>\n`
+    }else{
+        message+= `Ձեր առաջադրանքը չի գտնվել, կապնվեք ադմինների հետ\n`;
     }
 
     await ctx.telegram.sendMessage(

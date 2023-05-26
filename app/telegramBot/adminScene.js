@@ -18,7 +18,16 @@ const adminCommands = {
 
 
 const adminScene = new Scenes.BaseScene("adminScene");
-adminScene.enter(ctx => ctx.reply("Բարի գալուստ այս խաղ duq admin eq"));
+adminScene.enter(async ctx => {
+    await ctx.telegram.setMyCommands([
+        // { command: "/start", description: "Start" },
+        { command: "/info", description: "Ինֆորմացիա այս պահի մասին" },
+        { command: "/help", description: "Օգնություն" },
+        { command: "/game", description: "Խաղերի ցանկը" },
+        // { command: "/admin", description: "Admin" },
+    ]);
+    return ctx.reply("Բարի գալուստ այս խաղ duq admin eq")
+});
 
 
 
@@ -37,7 +46,7 @@ adminScene.on("message", async (ctx, next) => {
                     await cancelGame({player, ctx})
                     break
                 case 'point':
-                    await addPoint({player, ctx, command})
+                    await addLocationPoint({player, ctx, command}) //addPoint({player, ctx, command})
                     break
                 case 'locationpoint':
                     await addLocationPoint({player, ctx, command})
@@ -67,11 +76,11 @@ adminScene.on("message", async (ctx, next) => {
 // })
 
 
-// adminScene.command("help", async (ctx) => {
-//     if (ctx.state.role === "admin") return showAdminInfo(ctx);
-//     //else if(ctx.state.role==='player')
-//     return showHelpInfo(ctx);
-// }); // open Games Menu)
+adminScene.command("help", async (ctx) => {
+    if (ctx.state.role === "admin") return showAdminInfo(ctx);
+    //else if(ctx.state.role==='player')
+    // return showHelpInfo(ctx);
+}); // open Games Menu)
 
 adminScene.on(message("text"), async (ctx, next) => {
     if (ctx.message.text.startsWith('/')) {
