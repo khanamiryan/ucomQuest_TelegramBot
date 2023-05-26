@@ -1087,7 +1087,7 @@ const useLocationSceneMiddleware = async (ctx, next) => {
     const userLocationPoint = ctx.session.user.locationPoint;
 
     //if user have point for level up
-    if (userLocationPoint >= location.finishPoint) {
+    if (userLocationPoint >= location?.finishPoint) {
         if (gameConfig.choosingLevelUpGame === false) {
             const levelUpClue = await goToUserNextLevelUpClueUpdateSchema(userTelegramId);
             ctx.session.currentClueData = levelUpClue;
