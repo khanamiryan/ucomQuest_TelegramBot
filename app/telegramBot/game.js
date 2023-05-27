@@ -7,7 +7,7 @@ const { getLocationDataById } = require("../api/location/location");
 const { getClueById, updateClue } = require("../api/clue/clue");
 const { newMessage } = require("../api/messages/messages");
 const moment = require("moment");
-const { getFile, getFileType } = require("../api/file/file");
+const { getFile } = require("../api/file/file");
 const { Clues } = require("../api/clue/clue");
 
 const { playStatuses, gameConfig, clueTypes, texts} = require("../docs/constants");
@@ -148,9 +148,10 @@ const handleFileImage = async (ctx, { source, filename }) => {
  */
 const sendFileToTelegram = async (ctx, filename) => {
     try {
-        const type = await getFileType(filename);
-        const source = getFile(filename);
-        switch (type.mime.split("/")[0]) {
+        // const type = await getFileType(filename);
+        const {fileType: type, fileData: source} = await getFile(filename);
+
+        switch (type.split("/")[0]) {
             case "image":
                 await ctx.replyWithPhoto({ source, filename });
                 break;

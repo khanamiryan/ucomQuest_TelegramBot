@@ -1,16 +1,16 @@
 const express = require('express');
 const Location = require('./location.schema')
 const router = express.Router()
-const multer  = require('multer')
-const storageConfig = multer.diskStorage({
-  destination: (req, file, cb) =>{
-    cb(null, "uploads");
-  },
-  filename: (req, file, cb) =>{
-    cb(null, file.originalname);
-  }
-});
-const upload = multer({ dest: 'public/', storage: storageConfig })
+const { upload } = require("../../multer");
+// const storageConfig = multer.diskStorage({
+//   destination: (req, file, cb) =>{
+//     cb(null, "uploads");
+//   },
+//   filename: (req, file, cb) =>{
+//     cb(null, file.originalname);
+//   }
+// });
+// const upload = multer({ dest: 'public/', storage: storageConfig })
 
 getLocation = async () => {
   return Location.find();

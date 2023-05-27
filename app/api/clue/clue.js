@@ -1,16 +1,18 @@
 const express = require('express');
 const Clues = require('./clue.schema')
+const { upload } = require("../../multer");
 const router = express.Router()
-const multer  = require('multer')
-const storageConfig = multer.diskStorage({
-  destination: (req, file, cb) =>{
-    cb(null, "uploads");
-  },
-  filename: (req, file, cb) =>{
-    cb(null, file.originalname);
-  }
-});
-const upload = multer({ dest: 'public/', storage: storageConfig })
+// const multer  = require('multer')
+// const storageConfig = multer.diskStorage({
+//   destination: (req, file, cb) =>{
+//     cb(null, "uploads");
+//   },
+//   filename: (req, file, cb) =>{
+//     cb(null, file.originalname);
+//   }
+// });
+// const upload = multer({ dest: 'public/', storage: storageConfig })
+
 router.post('/',  upload.single('file'), async (req, res) => {
   let body = req.body;
   // console.log('body', body)

@@ -14,9 +14,12 @@ router.get('/', async (req, res) => {
   res.json(files)
 })
 router.get('/fileData/:fileName', async (req, res) => {
+  const {fileType, fileData} = await getFile(req.params.fileName);
+
+
   const data = {
-    fileType: await getFileType(req.params.fileName),
-    fileData: getFile(req.params.fileName),
+    fileType: fileType,
+    fileData: fileData
   }
   res.json(data)
 })
@@ -24,7 +27,21 @@ router.get('/files/:filename', async(req, res) => {
   const { filename } = req.params;
   const filePath = `uploads/`;
 
-  res.sendFile(filename, { root: filePath });
+  // const f = await getFile(filename);
+
+  s3.getObject({
+    Bucket: 'jamesonquest',
+    Key: filename
+  })
+      .on('httpHeaders', function (statusCode, headers) {
+        res.set('Content-Length', headers['content-length']);
+        res.set('Content-Type', headers['content-type']);
+        this.response.httpResponse.createUnbufferedStream()
+            .pipe(res);
+      })
+      .send();
+
+  //res.sendFile(filename, { root: filePath });
 });
 const saveFile = async (data) => {
   const dir = path.join(__dirname, `../../../files/${data.userCode}/`)
@@ -47,17 +64,33 @@ const saveFile = async (data) => {
   }
 }
 const getFile = (filename) => {
-  const filePath = `../../../uploads/${filename}`
-  return fs.readFileSync(path.join(__dirname, filePath))
-}
-const getFileType = (filename) => {
-  const filePath = `../../../uploads/${filename}`
-  return FileType.fromFile(path.join(__dirname, filePath))
-}
+  return new Promise((resolve, reject) => {
+    s3.getObject({
+      Bucket: 'jamesonquest',
+      Key: filename
+    }, function(err, data) {
+      if (err) {
+        reject(err);
+        return;
+      }
+
+      const Body = data.Body;
+      const type = data.ContentType;
+
+      resolve({fileType: type, fileData: Body});
+    });
+  });
+};
+
+// const getFileType = (filename) => {
+//   const filePath = `../../../uploads/${filename}`
+//   return FileType.fromFile(path.join(__dirname, filePath))
+// }
 
 
 const file_system = require('fs');
 const archiver = require('archiver');
+const s3 = require("../../s3");
 
 router.get('/images', async (req, res) => {
   const output = file_system.createWriteStream('images.zip');
@@ -86,6 +119,6 @@ router.get('/images', async (req, res) => {
 module.exports = {
   router,
   saveFile,
-  getFileType,
+  // /getFileType,
   getFile,
 }
