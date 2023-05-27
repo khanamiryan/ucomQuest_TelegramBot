@@ -25,8 +25,8 @@ router.get('/fileData/:fileName', async (req, res) => {
 })
 router.get('/files/:filename', async(req, res) => {
   const { filename } = req.params;
-  const filePath = `uploads/`;
-
+  // const filePath = `uploads/`;
+  //
   // const f = await getFile(filename);
 
   s3.getObject({
