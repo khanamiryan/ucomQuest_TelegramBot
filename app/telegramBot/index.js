@@ -24,6 +24,8 @@ const { adminScene } = require("./adminScene");
 const {getUserById, getUserByTelegramId} = require("../api/user/user");
 const stage = require("./stage");
 const startGame = require("./scenes/startGameScene");
+const Users = require("../api/user/user.schema");
+const {playStatuses, texts} = require("../docs/constants");
 
 const {enter} = Scenes.Stage;
 
@@ -158,6 +160,16 @@ bot.on('callback_query', async (ctx) => {
   // Using context shortcut
   await ctx.answerCbQuery();
 });
+async function sendMessagesToAllPlayers(users, message) {
+  users.forEach(async (user) => {
+    await bot.telegram.sendMessage(user.telegramId, message);
+  });
+  return;
+}
+// bot.command("test", async (ctx) => {
+//   const user = ctx.session?.user;
+//
+// })
 bot.command("admin", async (ctx) => adminPage(ctx));
 // bot.command('name', async ctx => editTeamName(ctx))
 bot.command("game", async (ctx) => showGameMenu(ctx.state.userId)); // open Games Menu

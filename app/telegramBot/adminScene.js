@@ -30,8 +30,36 @@ adminScene.enter(async ctx => {
 });
 
 
-
 adminScene.on("message", async (ctx, next) => {
+    if (ctx.message.reply_to_message) {
+        if (ctx.message.reply_to_message.text.startsWith("Send your answer to user ")) {
+
+            const userId = ctx.message.reply_to_message.text.replace("Send your answer to user ", "")
+            if(ctx.message.text) {
+                await ctx.telegram.sendMessage(userId, `Պատասխան Ադմինիստրատորից: ${ctx.message.text}`);
+            }
+            else{
+                await ctx.telegram.sendMessage(userId, `Պատասխան Ադմինիստրատորից`);
+                if(ctx.message.photo) {
+                    await ctx.telegram.sendPhoto(userId, ctx.message.photo[0].file_id);
+                }else if(ctx.message.location){
+                    await ctx.telegram.sendLocation(userId, ctx.message.location.latitude, ctx.message.location.longitude)
+                }else if(ctx.message.document){
+                    await ctx.telegram.sendDocument(userId, ctx.message.document.file_id);
+                }else if(ctx.message.sticker){
+                    await ctx.telegram.sendSticker(userId, ctx.message.sticker.file_id);
+                }else if(ctx.message.voice){
+                    await ctx.telegram.sendVoice(userId, ctx.message.voice.file_id);
+                }else if(ctx.message.video){
+                    await ctx.telegram.sendVideo(userId, ctx.message.video.file_id);
+                }
+            }
+            return;
+        }
+        console.log(ctx)
+    }
+
+
     const [getCode, text, command] = ctx.message && ctx.message.text ? ctx.message.text.split(':') : []
     const code = getCode && getCode.trim().toLocaleLowerCase();
 
@@ -203,14 +231,7 @@ const playerInfoForAdmin = async ({player, ctx}) => {
 
 async function onAdminText(ctx){
     try {
-        if (ctx.message.reply_to_message) {
-            if (ctx.message.reply_to_message.text.startsWith("Send your answer to user ")) {
-                const userId = ctx.message.reply_to_message.text.replace("Send your answer to user ", "")
-                await ctx.telegram.sendMessage(userId, `Admin: ${ctx.message.text}`);
-                return;
-            }
-            console.log(ctx)
-        }
+
 
         let text, user, code;
         if(ctx.state.chatTo && ctx.message.text){

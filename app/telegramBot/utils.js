@@ -9,7 +9,7 @@ const {getLocationDataById} = require("../api/location/location");
 const latLongRegex = new RegExp(/^((\-?|\+?)?\d+(\.\d+)?),\s*((\-?|\+?)?\d+(\.\d+)?)$/, "gi"); //gi;
 
 async function resetUserSession(ctx) {
-    ctx.session.user?.playingClueId && (await stopPlayingClue(ctx.session.user.playingClueId, false));
+    ctx.session.user?.playingClueId && (await stopPlayingClue(ctx.session.user, false));
     // const user = await getUserByTelegramId(ctx.from.id);
 
     await Users.updateOne({ telegramId: ctx.from.id }, { $set: initUserSession });

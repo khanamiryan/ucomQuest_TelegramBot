@@ -539,7 +539,7 @@ const approveClueOrLocation = async ({ ctx, text }) => {
             await stopPlayingClue(player);
             await ctx.telegram.sendMessage(
                 userId,
-                `Շնորհավորում եմ դուք հաղթահարեցիք այս առաջադրանքը և վաստակել եք ${clue.point} միավոր։Կարող եք ընտրել նոր խաղ։`,
+                `Շնորհավորում ենք: Դուք հաղթահարեցիք այս առաջադրանքը և վաստակեցիք ${clue.point} միավոր։`,
                 {
                     parse_mode: "HTML",
                 }
@@ -791,7 +791,8 @@ const reject = async ({ ctx, text }) => {
     const [, userId] = user.split("=");
     await ctx.telegram.sendMessage(
         userId,
-        "Ձեր ուղարկված պատասխանը անվավեր է ճանաչվել մեր ադմինների կողմից։ Խնդրում ենք նորից փորձել։"
+        texts.rejectMessage
+
     );
 };
 
@@ -897,8 +898,13 @@ const goToLevelUp = async (userTelegramId, showGameMenuParam = true) => {
         showGameMenuParam && (await showGameMenu(userTelegramId));
     } else {
          //stopLocationAndGoToLevelUp(userTelegramId);
-        const levelUpClue = await goToUserNextLevelUpClueUpdateSchema(userTelegramId);
+        //const levelUpClue = await goToUserNextLevelUpClueUpdateSchema(userTelegramId);
        // await showGameMenu(userTelegramId);
+        const player = await getUserByTelegramId(userTelegramId);
+        const levelUpClue = await Clues.findOne({
+            clueType: "levelUp",
+            locationId: player.playingLocationId,
+        });
         ctxObj[userTelegramId].session.currentClueData = levelUpClue
         await ctxObj[userTelegramId]?.scene.enter("levelUpScene");
         // console.log(ctxObj[userTelegramId]?.session?.currentClueData )

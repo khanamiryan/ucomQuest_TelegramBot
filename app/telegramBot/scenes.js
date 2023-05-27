@@ -9,8 +9,9 @@ const {
 } = require("./game");
 const { getLocationDataById } = require("../api/location/location");
 const { message } = require("telegraf/filters");
-const { playStatuses } = require("../docs/constants");
+const { playStatuses, texts} = require("../docs/constants");
 const {getClueById} = require("../api/clue/clue");
+const {bot} = require("../bot");
 
 
 
@@ -80,10 +81,41 @@ levelUpScene.enter(async (ctx) => {
     const user = await startPlayClue(ctx, currentClue?._id);
     ctx.session.user = user;
 
+    // if(currentClue.nowPlaying>=currentClue.maxPlayersSameTime){
+    //     //find users not in playStatus playingLevelUp
+    //     //playingLocationSteps
+    //     //find users  in whos playingLocationSteps  is playingLevelUp
+    //
+    //     //telegramid exists
+    //
+    //
+    //     const allAnotherUsers =  await Users.find({
+    //         _id: {$ne: user._id},
+    //         playStatus: {$ne: playStatuses.playingLevelUp},
+    //         telegramId: {$exists: true},
+    //     });
+    //
+    //     const filteredUsers = allAnotherUsers?.filter(
+    //         (u) =>
+    //             u.role !== "admin" &&
+    //             u.playingLocationSteps[0].toString() ===
+    //             user.playingLocationSteps[0].toString()
+    //     );
+    //     await sendMessagesToAllPlayers(allAnotherUsers, texts.notWinners);
+    //
+    // }
+
     // await enterToLevelUp(ctx.session.user.telegramId);
     //may be need to show firs description here??
     //play Clue levelup (description and all)
 });
+
+async function sendMessagesToAllPlayers(users, message) {
+    users.forEach(async (user) => {
+        await bot.telegram.sendMessage(user.telegramId, message);
+    });
+    return;
+}
 levelUpScene.command("game", async (ctx, next) => {
     ctx.reply("Այժմ, դուք LevelUp առաջադրանքի մեջ եք");
     // const user = await getUserByTelegramId(userTelegramId);
@@ -126,11 +158,29 @@ const finishGameScene = new Scenes.BaseScene("finishGameScene");
 finishGameScene.enter(async (ctx) => {
     try {
         ctx.session.user = await setUserPlayStatus(playStatuses.finishedGame, ctx.session.user._id);
+        const user = ctx.session.user;
         // ctx.reply("Ավարտվեց խաղը");
         const userId = ctx.session.user.telegramId;
         // await ctx.telegram.setMyCommands(userId, [{ command: '/help', description: 'Help' }]);
 
+
+
         await ctx.telegram.sendMessage(userId, "Շնորհավորում եմ դուք հաղթահարել եք ամբողջ խաղը։");
+
+        const allAnotherUsers =  await Users.find({
+            _id: {$ne: user._id},
+            // playStatus: {$ne: playStatuses.playingLevelUp},
+            telegramId: {$exists: true},
+        });
+
+        const filteredUsers = allAnotherUsers?.filter(
+            (u) =>
+                u.role !== "admin" &&
+                u.playingLocationSteps[0].toString() ===
+                user.playingLocationSteps[0].toString()
+        );
+
+        await sendMessagesToAllPlayers(filteredUsers, texts.notWinners);
 
     }
     catch (e) {
