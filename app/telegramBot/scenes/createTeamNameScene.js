@@ -18,7 +18,7 @@ createTeamName.leave((ctx) => {
         });
     }else {
         // ctx.replyWithHTML("Բարի գալուստ")
-        ctx.replyWithHTML("Այժմ սկսելու են խաղերը, որոնց ժամանակ դուք պետք է վաստակեք 50 միավոր ձեր նվերը գտնելու համար։")
+        ctx.replyWithHTML(texts.teamNameSuccess)
     }
 });
 createTeamName.on("message", async (ctx, next) => {

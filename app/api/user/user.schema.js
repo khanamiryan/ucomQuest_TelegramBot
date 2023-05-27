@@ -68,9 +68,9 @@ const userSchema = mongoose.Schema(
       playingLocationTime: {
         type: Date,
       },
-      // playedGames: {
-      //   type: [String],
-      // },
+      playedGames: {
+        type: [String],
+      },
       playStatus: {
         //todo change to enum or const
         type: String,

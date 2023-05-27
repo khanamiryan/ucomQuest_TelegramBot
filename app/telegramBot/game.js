@@ -10,7 +10,7 @@ const moment = require("moment");
 const { getFile, getFileType } = require("../api/file/file");
 const { Clues } = require("../api/clue/clue");
 
-const { playStatuses, gameConfig, clueTypes } = require("../docs/constants");
+const { playStatuses, gameConfig, clueTypes, texts} = require("../docs/constants");
 
 const { sendMessageToUserAdmin } = require("./admin");
 const { ctxObj } = require("../bot");
@@ -538,7 +538,7 @@ const approveClueOrLocation = async ({ ctx, text }) => {
             await stopPlayingClue(player);
             await ctx.telegram.sendMessage(
                 userId,
-                `Շնորհավորում եմ դուք հաղթահարեցիք այս առաջադրանքը և վաստակել եք <b>${clue.point}</b> միավոր։`,
+                `Շնորհավորում եմ դուք հաղթահարեցիք այս առաջադրանքը և վաստակել եք ${clue.point} միավոր։Կարող եք ընտրել նոր խաղ։`,
                 {
                     parse_mode: "HTML",
                 }
@@ -559,10 +559,11 @@ const approveClueOrLocation = async ({ ctx, text }) => {
             // if(nextLocationId) {
             await stopLocationAndGoToNext(player);
             // await goToNextLocation(player);
-            await ctx.telegram.sendMessage(
-                userId,
-                "Շնորհավորում եմ դուք հաղթահարել եք այս տարածքի խաղերը։\nՀաջորդիվ ուղևորվեք..."
-            );
+
+            // await ctx.telegram.sendMessage(
+            //     userId,
+            //     "Շնորհավորում եմ դուք հաղթահարել եք այս տարածքի խաղերը։\nՀաջորդիվ ուղևորվեք..."
+            // );
 
             userCtx?.scene.enter("locationScene");
             // userCtx && (await useLocationSceneMiddleware(userCtx));
@@ -853,14 +854,7 @@ const sendWelcomeMessage = (ctx) => {
         showGameMenu(ctx.state.userId).then();
     } else {
         ctx.reply(
-            `Բարի գալուստ։
-Շնորհավորում ենք դուք ունեք բացառիկ հնարավորություն մասնակցելու 
-<b>All Inclusive Armenia</b> 
-ընկերության կողմից կազմակերպված Գյումրիում տեղի ունեցող քաղաքային քվեստին։ 
-Ձեզ սպասվում են հետաքրքիր ու յուրահատուկ խաղեր, որոնք երբևէ չեք խաղացել։
-Ձեր խաղավարների մոտ կան թղթապանակներ, դրա մեջ գտնվող իրերը օգնելու են հաղթահարել մեր խաղերը։ 
-Գտեք այնտեղից առաջին խաղը։ 
-Այն լուծելու արդյունքում ուղարկեք մեզ ձեր թիմի կոդը, որպեսզի շարունակենք խաղալ։`,
+            texts.startGameText,
             {
                 parse_mode: "HTML",
             }
@@ -883,7 +877,7 @@ const editTeamName = async (ctx) => {
 const goToLevelUp = async (userTelegramId, showGameMenuParam = true) => {
     await bot.telegram.sendMessage(
         userTelegramId,
-        `Դուք հավաքեցիք բավականաչափ միավոր <b>Level Up</b> խաղալու համար`,
+        texts.levelUpStartText,
         {
             parse_mode: "HTML",
         }
@@ -903,8 +897,9 @@ const goToLevelUp = async (userTelegramId, showGameMenuParam = true) => {
     } else {
          //stopLocationAndGoToLevelUp(userTelegramId);
         const levelUpClue = await goToUserNextLevelUpClueUpdateSchema(userTelegramId);
-        // /await showGameMenu(userTelegramId);
-        await ctxObj[userTelegramId]?.scene.enter("locationScene");
+       // await showGameMenu(userTelegramId);
+        ctxObj[userTelegramId].session.currentClueData = levelUpClue
+        await ctxObj[userTelegramId]?.scene.enter("levelUpScene");
         // console.log(ctxObj[userTelegramId]?.session?.currentClueData )
         // ctxObj[userTelegramId]?.scene.enter("levelUpScene");
 

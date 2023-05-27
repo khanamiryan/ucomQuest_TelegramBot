@@ -43,7 +43,7 @@ startGame.on(message("text"), async (ctx, next) => {
             if (!user.teamName) {
                 return ctx.scene.enter("createTeamName");
             } else {
-                await ctx.reply(`Շնորհավորում եմ Ձեզ: Դուք խաղի մեջ եք:\nԱյժմ կարող եք սկսել խաղը։`);
+                await ctx.reply(texts.teamNameSuccess);
                 await showGameMenu(user.telegramId);
                 // await enter("goingToLocationScene");
                 return ctx.scene.enter("goingToLocationScene");
@@ -59,7 +59,7 @@ startGame.on(message("text"), async (ctx, next) => {
             //return next();
         }
     } else {
-        await ctx.reply(`Շնորհավորում եմ Ձեզ: Դուք խաղի մեջ եք:\nԱյժմ կարող եք սկսել խաղը։`);
+        await ctx.reply(texts.teamNameSuccess);
         //await showGameMenu(user.telegramId);
         // ctx.scene.leave();
         ctx.session.user = user;
