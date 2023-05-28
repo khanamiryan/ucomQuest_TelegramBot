@@ -19,13 +19,13 @@ const adminCommands = {
 
 const adminScene = new Scenes.BaseScene("adminScene");
 adminScene.enter(async ctx => {
-    await ctx.telegram.setMyCommands([
-        // { command: "/start", description: "Start" },
-        { command: "/info", description: "Ինֆորմացիա այս պահի մասին" },
-        { command: "/help", description: "Օգնություն" },
-        { command: "/game", description: "Խաղերի ցանկը" },
-        // { command: "/admin", description: "Admin" },
-    ]);
+    // await ctx.telegram.setMyCommands([
+    //     // { command: "/start", description: "Start" },
+    //     { command: "/info", description: "Ինֆորմացիա այս պահի մասին" },
+    //     { command: "/help", description: "Օգնություն" },
+    //     { command: "/game", description: "Խաղերի ցանկը" },
+    //     // { command: "/admin", description: "Admin" },
+    // ]);
     return ctx.reply("Բարի գալուստ այս խաղ duq admin eq")
 });
 

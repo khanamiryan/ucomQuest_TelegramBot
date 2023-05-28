@@ -111,11 +111,11 @@ stage.use(async (ctx, next) => {
 bot.use(async (ctx, next)=>{
   const user = ctx.session?.user;
   if (user?.role === "player") {
-  await ctx.telegram.setMyCommands([
-      { command: "/info", description: "Ինֆորմացիա այս պահի մասին" },
-      { command: "/help", description: "Օգնություն" },
-      { command: "/game", description: "Խաղերի ցանկը" },
-    ]);
+  // await ctx.telegram.setMyCommands([
+  //     { command: "/info", description: "Ինֆորմացիա այս պահի մասին" },
+  //     { command: "/help", description: "Օգնություն" },
+  //     { command: "/game", description: "Խաղերի ցանկը" },
+  //   ]);
   } else if (user?.role === "admin") {
 
   }
