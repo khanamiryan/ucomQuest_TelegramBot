@@ -167,21 +167,24 @@ finishGameScene.enter(async (ctx) => {
 
         await ctx.telegram.sendMessage(userId, "Շնորհավորում եմ դուք հաղթահարել եք ամբողջ խաղը։");
 
-        const allAnotherUsers =  await Users.find({
-            _id: {$ne: user._id},
-            // playStatus: {$ne: playStatuses.playingLevelUp},
-            telegramId: {$exists: true},
-        });
+        try {
+            const allAnotherUsers =  await Users.find({
+                _id: {$ne: user._id},
+                // playStatus: {$ne: playStatuses.playingLevelUp},
+                telegramId: {$exists: true},
+            });
 
-        const filteredUsers = allAnotherUsers?.filter(
-            (u) =>
-                u.role !== "admin" &&
-                u.playingLocationSteps[0].toString() ===
-                user.playingLocationSteps[0].toString()
-        );
+            const filteredUsers = allAnotherUsers?.filter(
+                (u) =>
+                    u.role !== "admin" &&
+                    u.playingLocationSteps[0].toString() ===
+                    user.playingLocationSteps[0].toString()
+            );
 
-        await sendMessagesToAllPlayers(filteredUsers, texts.notWinners);
-
+            await sendMessagesToAllPlayers(filteredUsers, texts.notWinners);
+        }catch (e){
+            console.log(e);
+        }
     }
     catch (e) {
         console.log(e);

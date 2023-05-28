@@ -843,7 +843,7 @@ ${allPointText}
 
 ${locationText ? locationText : ""}
 
-${timesInfo.locationTime >= 1 && gameText ? gameText : ""}
+${timesInfo.locationTime >= 1 && gameText ? gameText : " "}
 `,
         {
             parse_mode: "HTML",
