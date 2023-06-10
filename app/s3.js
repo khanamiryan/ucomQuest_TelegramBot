@@ -7,7 +7,7 @@ dotenv.config();
 const spacesEndpoint = new AWS.Endpoint(process.env.DO_SPACES_ENDPOINT);
 
 const s3 = new AWS.S3({
-    endpoint: spacesEndpoint.href,
+    endpoint: spacesEndpoint,
     region: "nyc3",
     credentials: new AWS.Credentials({
         accessKeyId: process.env.DO_SPACES_KEY,

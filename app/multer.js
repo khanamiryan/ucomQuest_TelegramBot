@@ -6,7 +6,7 @@ const s3 = require("./s3");
 const upload  = multer({
     storage: multerS3({
         s3: s3,
-        bucket: 'allinclusivequest',
+        bucket: 'allinquest',
         acl: 'public-read',
         key: function (request, file, cb) {
             cb(null, file.originalname);
