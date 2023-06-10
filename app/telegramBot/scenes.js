@@ -5,7 +5,7 @@ const {
 const Users = require("../api/user/user.schema");
 const {
 
-    startPlayClue, getPlayerGameAndLocationTimes,
+    startPlayClue, getPlayerGameAndLocationTimes, sendMessagesToMultipleUsers,
 } = require("./game");
 const { getLocationDataById } = require("../api/location/location");
 const { message } = require("telegraf/filters");
@@ -50,7 +50,7 @@ goingToLocationScene.leave(async (ctx) => {
      // await ctx.reply("Դուք հաջողությամբ հասաք նշված վայր։");
     if(!ctx.session.locationDescriptionShown) {
         const location = await getLocationDataById(ctx.session.user.playingLocationId);
-        location.startDescription && (await ctx.replyWithHTML(location.startDescription));
+        location?.startDescription && (await ctx.replyWithHTML(location.startDescription));
         ctx.session.locationDescriptionShown = true;
     }
 });
@@ -101,7 +101,7 @@ levelUpScene.enter(async (ctx) => {
     //             u.playingLocationSteps[0].toString() ===
     //             user.playingLocationSteps[0].toString()
     //     );
-    //     await sendMessagesToAllPlayers(allAnotherUsers, texts.notWinners);
+    //     await sendMessagesToMultipleUsers(allAnotherUsers, texts.notWinners);
     //
     // }
 
@@ -110,12 +110,8 @@ levelUpScene.enter(async (ctx) => {
     //play Clue levelup (description and all)
 });
 
-async function sendMessagesToAllPlayers(users, message) {
-    users.forEach(async (user) => {
-        await bot.telegram.sendMessage(user.telegramId, message);
-    });
-    return;
-}
+
+
 levelUpScene.command("game", async (ctx, next) => {
     ctx.reply("Այժմ, դուք LevelUp առաջադրանքի մեջ եք");
     // const user = await getUserByTelegramId(userTelegramId);
@@ -181,7 +177,7 @@ finishGameScene.enter(async (ctx) => {
                     user.playingLocationSteps[0].toString()
             );
 
-            await sendMessagesToAllPlayers(filteredUsers, texts.notWinners);
+            await sendMessagesToMultipleUsers(filteredUsers, texts.notWinners);
         }catch (e){
             console.log(e);
         }

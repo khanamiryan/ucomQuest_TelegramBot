@@ -82,7 +82,7 @@ const onText = async (ctx) => {
       const sendToAdmin = await getUserByTelegramId(ctx.state.chatTo);
 
       const user = ctx.session.user;
-      const admin = user.adminId;
+      const admin = user.adminId; //todo works only because first time is user is undefined anf throw error, invetigate why
       const scene = ctx.scene.current;
       const adminTelegramId = ctx.state.chatTo;
       if (

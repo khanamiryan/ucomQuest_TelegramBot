@@ -160,12 +160,6 @@ bot.on('callback_query', async (ctx) => {
   // Using context shortcut
   await ctx.answerCbQuery();
 });
-async function sendMessagesToAllPlayers(users, message) {
-  users.forEach(async (user) => {
-    await bot.telegram.sendMessage(user.telegramId, message);
-  });
-  return;
-}
 // bot.command("test", async (ctx) => {
 //   const user = ctx.session?.user;
 //

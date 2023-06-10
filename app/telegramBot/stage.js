@@ -2,7 +2,7 @@ const {Scenes} = require("telegraf");
 const startGame = require("./scenes/startGameScene");
 const createTeamName = require("./scenes/createTeamNameScene");
 const locationScene = require("./scenes/locationScene");
-const {adminScene} = require("./adminScene");
+const {adminScene, messageToAllScene} = require("./adminScene");
 const { levelUpScene, finishGameScene, goingToLocationScene} = require("./scenes");
 const resetScene = require("./scenes/resetGameScene");
 const clueScene = require("./scenes/clueScene");
@@ -16,7 +16,8 @@ const stage = new Scenes.Stage([
     levelUpScene,
     finishGameScene,
     goingToLocationScene,
-    resetScene
+    resetScene,
+    messageToAllScene
 ]);
 
 module.exports = stage;

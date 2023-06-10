@@ -1,7 +1,7 @@
 const Clue = require("../api/clue/clue.schema");
 const Users = require("../api/user/user.schema");
 const Messages = require("../api/messages/messages.schema");
-const { updateUserByTelegramId, getUserByTelegramId } = require("../api/user/user");
+const { updateUserByTelegramId, getUserByTelegramId, getOnlyPLayers} = require("../api/user/user");
 const { Telegraf, Scenes, session } = require("telegraf");
 const { getLocationDataById } = require("../api/location/location");
 const { getClueById, updateClue } = require("../api/clue/clue");
@@ -798,6 +798,7 @@ const reject = async ({ ctx, text }) => {
 
 const showInfo = async (ctx) => {
     const { user, userId } = await ctx.state;
+
     const timesInfo = await getPlayerGameAndLocationTimes(userId);
     if (user.role === "admin") {
         await bot.telegram.sendMessage(userId, "you are Admin");
@@ -1102,7 +1103,31 @@ const useLocationSceneMiddleware = async (ctx, next) => {
         await showGameMenu(userTelegramId);
     }
 };
+const sendMessageToAllPlayers = async (message) => {
+    const users = await getOnlyPLayers();
+    await sendMessagesToMultipleUsers(users?.filter((user)=>{
+        return user?.telegramId
+    }), message);
+    // for (const user of users) {
+    //     if (user?.telegramId){
+    //         await bot.telegram.sendMessage(user.telegramId, message);
+    //     }
+    // }
+}
+async function sendMessagesToMultipleUsers(users, message) {
 
+
+    for (const user of users) {
+        if(!user?.telegramId) return;
+        try {
+             await bot.telegram.sendMessage(user.telegramId, message);
+        }
+        catch (e) {
+            console.log(333, e)
+        }
+    }
+    return;
+}
 module.exports = {
     getPlayerGameAndLocationTimes,
     checkUserGameStatus,
@@ -1121,4 +1146,6 @@ module.exports = {
     goToUserNextLevelUpClueUpdateSchema,
     startPlayClue,
     useLocationSceneMiddleware,
+    sendMessageToAllPlayers,
+    sendMessagesToMultipleUsers
 };

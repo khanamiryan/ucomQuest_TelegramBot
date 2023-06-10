@@ -1,10 +1,28 @@
 const {Scenes} = require("telegraf");
 const {getUserInfo, updateUserByTelegramId, getUserByTelegramId, getUserByCode} = require("../api/user/user");
 const Users = require("../api/user/user.schema");
-const {showGameMenu, checkUserGameStatus, getPlayerInfoText} = require("./game");
+const {showGameMenu, checkUserGameStatus, getPlayerInfoText, sendMessageToAllPlayers} = require("./game");
 const {onText, onPhoto, showHelpInfo} = require("./playerOnData");
 const {message} = require("telegraf/filters");
 const {showAdminInfo} = require("./admin");
+
+
+
+const messageToAllScene = new Scenes.BaseScene("messageToAllScene");
+messageToAllScene.enter(async (ctx) => {
+    await ctx.reply("Ադմին, գրիր ինչ որ բան ու ուղարկիր բոլորին");
+});
+messageToAllScene.on("message", async (ctx) => {
+    try {
+        await sendMessageToAllPlayers(ctx.message.text);
+        await ctx.reply("Ադմին, քո գրածը  ուղարկվեց բոլորին");
+    } catch (e) {
+        console.log(e)
+        await ctx.reply("Բոլորին նամակ ուղարկելու ընթացքում սխալ է տեղի ունեցել");
+    }
+    await ctx.scene.enter("adminScene", {}, true);
+});
+
 
 const adminCommands = {
     stop: 'chatting is stop',
@@ -19,13 +37,14 @@ const adminCommands = {
 
 const adminScene = new Scenes.BaseScene("adminScene");
 adminScene.enter(async ctx => {
-    // await ctx.telegram.setMyCommands([
-    //     // { command: "/start", description: "Start" },
-    //     { command: "/info", description: "Ինֆորմացիա այս պահի մասին" },
-    //     { command: "/help", description: "Օգնություն" },
-    //     { command: "/game", description: "Խաղերի ցանկը" },
-    //     // { command: "/admin", description: "Admin" },
-    // ]);
+    await ctx.telegram.setMyCommands([
+        // { command: "/start", description: "Start" },
+        { command: "info", description: "Ինֆորմացիա այս պահի մասին" },
+        { command: "help", description: "Օգնություն-  admin" },
+        { command: "game", description: "Խաղերի ցանկը" },
+        { command: "messagetoall", description: "Նամակ բոլոր մասնակիներին" },
+        // { command: "/admin", description: "Admin" },
+    ]);
     return ctx.reply("Բարի գալուստ այս խաղ duq admin eq")
 });
 
@@ -109,6 +128,10 @@ adminScene.command("help", async (ctx) => {
     //else if(ctx.state.role==='player')
     // return showHelpInfo(ctx);
 }); // open Games Menu)
+adminScene.command("messagetoall", async (ctx) => {
+
+    return ctx.scene.enter("messageToAllScene");
+});
 
 adminScene.on(message("text"), async (ctx, next) => {
     if (ctx.message.text.startsWith('/')) {
@@ -254,6 +277,8 @@ async function onAdminText(ctx){
     }
 
 }
+
 module.exports = {
-    adminScene
+    adminScene,
+    messageToAllScene
 }

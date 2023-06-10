@@ -19,6 +19,12 @@ startGame.leave(async (ctx) => {
     if (ctx.session.user?.role === "admin") {
         await ctx.reply("Ադմին ես");
         return ctx.scene.enter("adminScene");
+    }else{
+        await ctx.telegram.setMyCommands([
+            { command: "info", description: "Ինֆորմացիա այս պահի մասին test" },
+            { command: "help", description: "Օգնություն" },
+            { command: "game", description: "Խաղերի ցանկը" },
+          ]);
     }
     // await ctx.reply("gnnacinq hajrd pul");
 });
