@@ -30,7 +30,7 @@ router.get('/files/:filename', async(req, res) => {
   // const f = await getFile(filename);
 
   s3.getObject({
-    Bucket: 'jamesonquest',
+    Bucket: 'allinclusivequest',
     Key: filename
   })
       .on('httpHeaders', function (statusCode, headers) {
@@ -66,7 +66,7 @@ const saveFile = async (data) => {
 const getFile = (filename) => {
   return new Promise((resolve, reject) => {
     s3.getObject({
-      Bucket: 'jamesonquest',
+      Bucket: 'allinclusivequest',
       Key: filename
     }, function(err, data) {
       if (err) {
