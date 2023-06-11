@@ -109,6 +109,7 @@ stage.use(async (ctx, next) => {
      return next();
 });
 bot.use(async (ctx, next)=>{
+  await ctx.reply("Խաղն ավարտված է: Հաջողություն:");
   const user = ctx.session?.user;
   if (user?.role === "player") {
   // await ctx.telegram.setMyCommands([
