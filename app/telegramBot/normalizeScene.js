@@ -15,7 +15,7 @@ const { playStatuses } = require("../docs/constants");
 const normalizeScene = async (ctx) => {
     try {
         let user = ctx.session?.user; //await getUserByTelegramId(userTelegramId);
-        const currentScene = ctx.scene.current.id;
+        const currentScene = ctx.scene?.current?.id;
 
         if (!currentScene) {
             ctx.reply("ԽՆԴԻՐ");
