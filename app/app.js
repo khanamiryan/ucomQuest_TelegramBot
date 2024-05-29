@@ -7,13 +7,15 @@ const {bot} = require("./bot");
 const mongoose = require("mongoose");
 
 
-mongoose.set('useFindAndModify', false);
-mongoose.connect(process.env.mongodb, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  },
-  () => {}
-)
+//mongoose.set('useFindAndModify', false);oose.connect(process.env.mongodb, {
+// //     useNewUrlParser: true,
+// //     useUnifiedTopology: true,
+// //   },
+// //   () => {}
+// // )
+// mong
+mongoose.connect(process.env.mongodb).then(()=>{console.log('...')})
+
 const db = mongoose.connection;
 
 db.once("open", (db) => {
