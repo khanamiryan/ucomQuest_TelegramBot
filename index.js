@@ -10,9 +10,9 @@ const appRoute = require("./app/app");
 
 
 
-const { Server } = require("socket.io");
+// const { Server } = require("socket.io");
 
-const io = new Server(3005);
+// const io = new Server(3005);
 
 app.use(express.json());
 app.use(cors());
@@ -40,6 +40,6 @@ app.use("/", appRoute);
 app.listen(process.env.port, () => {
   console.log(`App is listening to port ${process.env.port}`);
 });
-io.on('connection', (socket) => {
-  console.log('a user connected');
-});
+// io.on('connection', (socket) => {
+//   console.log('a user connected');
+// });
