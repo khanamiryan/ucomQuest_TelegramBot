@@ -1,32 +1,37 @@
-const AWS = require("aws-sdk");
-
-const {
-    S3,
-} = require("@aws-sdk/client-s3");
-
-const fs = require("fs");
+const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
+const { readFileSync } = require("fs");
 const dotenv = require("dotenv");
+const { URL } = require("url");
 
 dotenv.config();
 
-const spacesEndpoint = new URL(process.env.DO_SPACES_ENDPOINT);
+// const spacesEndpoint = new URL(process.env.DO_SPACES_ENDPOINT);
 
-
-const s3 = new S3({
-    endpoint: spacesEndpoint.href,
-    region: "nyc3",
-
-    credentials: new AWS.Credentials({
+const s3Client = new S3Client({
+    endpoint: "https://fra1.digitaloceanspaces.com",
+    region: "fra1",
+    credentials: {
         accessKeyId: process.env.DO_SPACES_KEY,
-        secretAccessKey:  process.env.DO_SPACES_SECRET,
-    }),
+        secretAccessKey: process.env.DO_SPACES_SECRET,
+    },
 });
 
+const file = readFileSync("uploads/test.txt");
 
-const file = fs.readFileSync("uploads/test.txt");
+const uploadParams = {
+    Bucket: process.env.DO_SPACES_NAME,
+    Key: "any_file_or_path_name.jpg",
+    Body: file,
+    ACL: "public-read",
+};
 
-s3.putObject({Bucket: process.env.DO_SPACES_NAME, Key: "any_file_or_path_n2ame.jpg", Body: file, ACL:"public-read"}, (err, data) => {
-    if (err) return console.log(err);
-    console.log("Your file has been uploaded successfully!", data);
-});
+const run = async () => {
+    try {
+        const data = await s3Client.send(new PutObjectCommand(uploadParams));
+        console.log("Your file has been uploaded successfully!", data);
+    } catch (err) {
+        console.log("Error", err);
+    }
+};
 
+run();

@@ -10,7 +10,7 @@ dotenv.config();
 
 const s3 = new S3Client({
     endpoint: process.env.DO_SPACES_ENDPOINT,
-    region: "fra1",
+    region: process.env.DO_SPACES_REGION,
 
     credentials: {
         accessKeyId: process.env.DO_SPACES_KEY,
