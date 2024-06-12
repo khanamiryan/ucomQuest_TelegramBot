@@ -9,11 +9,14 @@ const { newMessage } = require("../api/messages/messages");
 const moment = require("moment");
 const { getFile } = require("../api/file/file");
 const { Clues } = require("../api/clue/clue");
+const {saveSessionToDb} = require("./scenes/saveSessionToDb");
 
-const { playStatuses, gameConfig, clueTypes, texts} = require("../docs/constants");
+
+const { playStatuses, gameConfig, clueTypes, texts, buttons} = require("../docs/constants");
 
 const { sendMessageToUserAdmin } = require("./admin");
 const { ctxObj } = require("../bot");
+
 
 const bot = new Telegraf(process.env.botToken, {
     polling: true,
@@ -399,27 +402,27 @@ const showGameMenu = async (userTelegramId) => {
             // const location = await getLocationDataById(user.playingLocationId);
             await bot.telegram.sendMessage(userTelegramId, location.startDescription);
         } else if (user.playingClueId) {
-            // const timesInfo = await getPlayerGameAndLocationTimes(userTelegramId);
-            //
-            // let message = ``;
-            // const gameData = await getClueById(user.playingClueId);
-            // if (gameData) {
-            //     message += `Ձեր առաջադրանքի անունն է <b><i>${gameData.name}</i></b>\n`;
-            //     message += `Նկարագրություն\n<b><i>${gameData.fullDescription}</i></b>\n`;
-            //     if (timesInfo.gameTime > 0 && timesInfo.gameTime < 60) {
-            //         message += `Հաղթահարելու համար մնացել է <b><i>${timesInfo.gameTime}</i></b> րոպե\n`;
-            //     }
-            //     //  message += `<b>Տևողությունը ${gameData.playTime} րոպե</b>\n`
-            // }
-            //
-            // await bot.telegram.sendMessage(
-            //     userTelegramId,
-            //     message,
-            //     {
-            //         parse_mode: "HTML",
-            //     }
-            //     // "Դուք դեռ խաղի ընթացքի մեջ եք և այդ պատճառով խաղերին հասանելիություն չունեք։"
-            // );
+            const timesInfo = await getPlayerGameAndLocationTimes(userTelegramId);
+
+            let message = ``;
+            const gameData = await getClueById(user.playingClueId);
+            if (gameData) {
+                message += `Ձեր առաջադրանքի անունն է <b><i>${gameData.name}</i></b>\n`;
+                message += `Նկարագրություն\n<b><i>${gameData.fullDescription}</i></b>\n`;
+                if (timesInfo.gameTime > 0 && timesInfo.gameTime < 60) {
+                    message += `Հաղթահարելու համար մնացել է <b><i>${timesInfo.gameTime}</i></b> րոպե\n`;
+                }
+                //  message += `<b>Տևողությունը ${gameData.playTime} րոպե</b>\n`
+            }
+
+            await bot.telegram.sendMessage(
+                userTelegramId,
+                message,
+                {
+                    parse_mode: "HTML",
+                }
+                // "Դուք դեռ խաղի ընթացքի մեջ եք և այդ պատճառով խաղերին հասանելիություն չունեք։"
+            );
         } else {
             const userGames = await Users.findOne({ telegramId: userTelegramId });
             const clueType = user.playStatus === "levelUp" ? "levelUp" : "standardGame";
@@ -505,19 +508,23 @@ const approveClueOrLocation = async ({ ctx, text }) => {
     const player = await getUserByTelegramId(userId);
     const userCtx = ctxObj[userId];
 
-    // await changeUserScene(ctx,userId, "start");
+
     if (player.playStatus === playStatuses.goingToLocation) {
         const locationData = await getLocationDataById(player.playingLocationId);
         //start clue
         await updateUserByTelegramId({
             telegramId: userId,
             data: {
-                playStatus: "playingClue",
+                playStatus: playStatuses.inLocation,
                 playingLocationTime: moment().add(locationData.finishTime, "minutes"),
             },
         });
         //todo it shall be in leave GoingLocation
+
         await ctx.telegram.sendMessage(userId, "Դուք հասել եք նշված վայր");
+        await userCtx?.scene.leave();
+        await userCtx?.scene.enter("locationScene");
+        // await userCtx?.session.save();
         // here shall be go to location scene function
 
         //   await showGameMenu(userId);
@@ -537,6 +544,7 @@ const approveClueOrLocation = async ({ ctx, text }) => {
             const clue = await getClueById(player.playingClueId);
 
             await stopPlayingClue(player);
+
             await ctx.telegram.sendMessage(
                 userId,
                 `Շնորհավորում ենք: Դուք հաղթահարեցիք այս առաջադրանքը և վաստակեցիք ${clue.point} միավոր։`,
@@ -544,7 +552,14 @@ const approveClueOrLocation = async ({ ctx, text }) => {
                     parse_mode: "HTML",
                 }
             );
+            // await ctx.deleteMessage().catch((err) => {
+            //     console.log("delete error",err);
+            // });
             await userCtx?.scene.enter("locationScene");
+
+
+            // await  saveSessionToDb(userCtx, userId);
+            // await showGameMenu(userId);
             // userCtx && (await useLocationSceneMiddleware(userCtx));
             //here shall be enter to locationScene
         } catch (e) {
@@ -573,14 +588,14 @@ const approveClueOrLocation = async ({ ctx, text }) => {
         } else {
             await finishTheGameUpdateSchema(player);
 
-            ctxObj[userId]?.scene.enter("finishGameScene");
+            userCtx?.scene.enter("finishGameScene");
 
             //finish the game scene
         }
     }
-    // await bot.telegram.sendMessage(userId, 'Դուք ավարտեցիք Խաղը')
-    //user enter location scene
-    //await showGameMenu(userId);
+
+    userCtx && await saveSessionToDb(userCtx, userId);
+
 };
 
 /**
@@ -608,7 +623,7 @@ const stopPlayingClue = async (user, successful = true) => {
             return await updateUserByTelegramId({
                 telegramId: user.telegramId,
                 data: {
-                    playingClueId: undefined,
+                    playingClueId: null,
                     playStatus: playStatuses.inLocation,
                     $unset: { playingClueTime: "" },
                     $inc: {
@@ -784,11 +799,21 @@ const rejectLocation = async ({ ctx, text }) => {
     await reject({ ctx, text });
 };
 const reject = async ({ ctx, text }) => {
-    ctx.deleteMessage().catch((err) => {
-        console.log(err);
-    });
+    // ctx.deleteMessage().catch((err) => {
+    //     console.log(err);
+    // });
+
+
     const [, user] = text.split("/");
     const [, userId] = user.split("=");
+
+    await ctx.editMessageReplyMarkup(
+        {
+            inline_keyboard: [
+                [buttons.getAnswerToPlayerButton(userId, "")]
+            ]
+
+        });
     await ctx.telegram.sendMessage(
         userId,
         texts.rejectMessage
@@ -908,6 +933,7 @@ const goToLevelUp = async (userTelegramId, showGameMenuParam = true) => {
         });
         ctxObj[userTelegramId].session.currentClueData = levelUpClue
         await ctxObj[userTelegramId]?.scene.enter("levelUpScene");
+        await saveSessionToDb(ctxObj[userTelegramId], userTelegramId)
         // console.log(ctxObj[userTelegramId]?.session?.currentClueData )
         // ctxObj[userTelegramId]?.scene.enter("levelUpScene");
 
@@ -1035,6 +1061,7 @@ const onMessageTo = async (ctx) => {
     try {
         const [, uId, messageId] = ctx.update.callback_query.data.split(":");
         await ctx.answerCbQuery();
+        await ctx.editMessageText("Ձեր պատասխանը ուղարկվել է");
         await ctx.reply(`Send your answer to user ${uId}`, {
             //ete aystex poxeq,
             reply_markup: {

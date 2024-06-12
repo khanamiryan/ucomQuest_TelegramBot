@@ -39,20 +39,25 @@ goingToLocationScene.enter(async (ctx) => {
         console.log(e);
     }
 });
-goingToLocationScene.on(message("text"), async (ctx, next) => {
-    next();
-});
+// goingToLocationScene.on(message("text"), async (ctx, next) => {
+//     next();
+// });
 goingToLocationScene.hears("goto", async (ctx, next) => {
     return ctx.scene.enter("locationScene");//????
 });
 
 goingToLocationScene.leave(async (ctx) => {
-     // await ctx.reply("Դուք հաջողությամբ հասաք նշված վայր։");
-    if(!ctx.session.locationDescriptionShown) {
-        const location = await getLocationDataById(ctx.session.user.playingLocationId);
-        location?.startDescription && (await ctx.replyWithHTML(location.startDescription));
-        ctx.session.locationDescriptionShown = true;
+    try {
+        if(!ctx.session.locationDescriptionShown) {
+            const location = await getLocationDataById(ctx.session.user.playingLocationId);
+            location?.startDescription && (await ctx.replyWithHTML(location.startDescription));
+            ctx.session.locationDescriptionShown = true;
+        }
+    }catch (e){
+        console.log("here",e);
     }
+     // await ctx.reply("Դուք հաջողությամբ հասաք նշված վայր։");
+
 });
 goingToLocationScene.command("game", async (ctx) => {
     await ctx.reply("Դուք պետք է հասնեք նշված վայր։");

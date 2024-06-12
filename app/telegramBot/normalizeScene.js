@@ -18,13 +18,18 @@ const normalizeScene = async (ctx) => {
         const currentScene = ctx.scene?.current?.id;
 
         if (!currentScene) {
-            ctx.reply("ԽՆԴԻՐ");
+            // ctx.reply("ԽՆԴԻՐ");
+            // ctx.scene.enter("startGame");
+            return ctx.scene.enter("startGame", { user }, true);
         } else {
             if(currentScene === "adminScene"){
                 return true;
             }
             //return ctx.scene.enter('clueScene',{user},false);
             if (currentScene === "goingToLocationScene") {
+                // if (user.playStatus === playStatuses.inLocation) {
+                //     return ctx.scene.enter("locationScene", { user }, true);
+                // }
                 if (user.playStatus === "playingClue") {
                     return ctx.scene.enter("clueScene", { user }, true);
                 } else if (user.playStatus === "playingLevelUp") {
@@ -38,7 +43,7 @@ const normalizeScene = async (ctx) => {
             }
             if (currentScene === "clueScene") {
                 if (user.playStatus === playStatuses.inLocation) {
-                    return ctx.scene.enter("locationScene", {  }, true);
+                    return ctx.scene.enter("locationScene");
                 }
                 if (user.playStatus === "playingLevelUp") {
                     return ctx.scene.enter("levelUpScene",  {}, true);

@@ -38,10 +38,32 @@ const texts = {
     // bob: `Շնորհավորում եմ Ձեզ: Դուք խաղի մեջ եք:\nԱյժմ կարող եք սկսել խաղը։`,
 }
 
+const getClueApproveButton = (userTelegramId, approveText="approve") => {
+    return {text: `✅ ${approveText}`, callback_data: `gTo:appG/uId=${userTelegramId}`};
+}
+const getClueRejectButton = (userTelegramId, rejectText="reject") => {
+    return {text: `❌ ${rejectText}`, callback_data: `gTo:rejG/uId=${userTelegramId}`};
+}
+const getAnswerToPlayerButton = (userTelegramId, messageId, text="Պատասխանել մասնակցին") =>{
+    return {
+        text,
+        callback_data: `oneMessageTo:${userTelegramId}:${messageId}`,
+    };
+}
+
+const buttons = {
+    getClueApproveButton,
+    getClueRejectButton,
+    getAnswerToPlayerButton,
+
+}
+
+
 module.exports = {
     playStatuses,
     initUserSession,
     gameConfig,
     clueTypes,
-    texts
+    texts,
+    buttons
 };

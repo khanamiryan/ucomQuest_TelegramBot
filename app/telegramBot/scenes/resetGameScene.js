@@ -2,12 +2,19 @@ const {Scenes} = require("telegraf");
 const {resetUserSession} = require("../utils");
 const resetScene = new Scenes.BaseScene("resetScene");
 
-resetScene.enter(async (ctx) => {
-    await ctx.reply("resetScene");
-    ctx.session.user = null;
+resetScene.enter(async (ctx, next) => {
 
-    await resetUserSession(ctx)
-    return await ctx.scene.enter("startGame");
+
+    await ctx.reply("resetScene");
+    // ctx.session.user = null;
+
+    await resetUserSession(ctx);
+
+    // ctx.session.user = null;
+    await ctx.scene.enter("startGame",{user: null});
+    ctx.session.user = undefined;
+    ctx.session = {}
+    // return next();
 
 });
 

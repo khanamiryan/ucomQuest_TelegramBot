@@ -68,6 +68,7 @@ bot.use(session({ store }));
 // });
 
 bot.use(async (ctx, next) => {
+  ctx.session??= {};
   let user = ctx?.session?.user;
   const telegramId = ctx.from.id||user.telegramId;
   user = await getUserByTelegramId(telegramId);
@@ -170,17 +171,32 @@ bot.command("admin", async (ctx) => adminPage(ctx));
 // bot.command('name', async ctx => editTeamName(ctx))
 bot.command("game", async (ctx) => showGameMenu(ctx.state.userId)); // open Games Menu
 // bot.command('start', async ctx => sendWelcomeMessage(ctx)) // open Games Menu
-bot.command("points", async (ctx) => showInfo(ctx)); // open Games Menu
-bot.command("info", async (ctx) => showInfo(ctx)); // open Games Menu
+bot.command("points", async (ctx) =>
+    showInfo(ctx)
+); // open Games Menu
+
+bot.command("info", async (ctx) =>
+    showInfo(ctx)
+); // open Games Menu
 bot.command("help", async (ctx) => {
   if (ctx.state.role === "admin") return showAdminInfo(ctx);
   //else if(ctx.state.role==='player')
   return showHelpInfo(ctx);
 }); // open Games Menu
 
-bot.command("reset", enter("resetScene"));
 
 
+// stage.command("reset", async (ctx) => {
+//   await ctx.scene.enter("resetScene");
+//   ctx.session = {};
+// })
+bot.command("reset", async (ctx,next) => {
+  await ctx.scene.enter("resetScene");
+  ctx.session = {};
+  // ctx.session.set("user", null);
+
+  // next();
+});
 
 adminScene.action(/^gTo/, async (ctx) => gameTo(ctx)); // gameTo
 adminScene.action(/^oneMessageTo/, async (ctx) => onMessageTo(ctx)); // oneMessageT);
