@@ -1060,6 +1060,8 @@ const gameTo = async (ctx) => {
 const onMessageTo = async (ctx) => {
     try {
         const [, uId, messageId] = ctx.update.callback_query.data.split(":");
+
+        // await ctx.editMessageText("Մենք ստացել ենք ձեր հաղորդագրությունը, սպասեք պատասխանի");
         await ctx.answerCbQuery();
         await ctx.editMessageText("Ձեր պատասխանը ուղարկվել է");
         await ctx.reply(`Send your answer to user ${uId}`, {

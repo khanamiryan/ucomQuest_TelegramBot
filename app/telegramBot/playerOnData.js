@@ -95,14 +95,14 @@ const onText = async (ctx) => {
       ) {
 
         const gameButtons = user? [
-          getAnswerToPlayerButton(user.telegramId, ctx.message.message_id)
+          buttons.getAnswerToPlayerButton(user.telegramId, ctx.message.message_id)
         ]:[];
         // if (user.playingClueId && user.playStatus === "playingClue") {
         if ((scene.id === "goingToLocationScene" || scene.id === "clueScene"|| scene.id==="levelUpScene") ) {//levelup also, and may be change rto playstatus
           gameButtons.push(
-              getClueApproveButton(ctx.state.userId, "Ընդունել որպես առաջադրանքի պատասխան")
+              buttons.getClueApproveButton(ctx.state.userId, "Ընդունել որպես առաջադրանքի պատասխան")
           );
-          gameButtons.push(getClueRejectButton(ctx.state.userId, "Մերժել որպես առաջադրանքի պատասխան"));
+          gameButtons.push(buttons.getClueRejectButton(ctx.state.userId, "Մերժել որպես առաջադրանքի պատասխան"));
         }
 
         adminTelegramId &&
@@ -155,8 +155,8 @@ const onFile = async (ctx) => {
       const userLocation = await getLocationDataById(ctx.state.user.playingLocationId);
       if (game && game._id) {
         const gameButtons = [
-          [getClueApproveButton(ctx.state.userId),
-            getClueRejectButton(ctx.state.userId)] // rej = reject, gTo = gameTo, uId = userId,
+          [buttons.getClueApproveButton(ctx.state.userId),
+            buttons.getClueRejectButton(ctx.state.userId)] // rej = reject, gTo = gameTo, uId = userId,
         ];
         await ctx.telegram.sendMessage(ctx.state.chatTo, `GameName: ${game.name}\nLocationName: ${userLocation.name}`, {reply_markup: JSON.stringify({inline_keyboard: gameButtons})})
         await ctx.reply(`Մենք ստացել ենք ձեր ֆայլը, սպասեք պատասխանի`);
