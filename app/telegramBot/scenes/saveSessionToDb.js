@@ -10,7 +10,7 @@ function defaultGetSessionKey(ctx){
 }
 const saveSessionToDb = async  (ctx, userId) =>{
 
-    await store.set(`${userId}:${userId}`, ctx.session );
+    await store.set(`${defaultGetSessionKey(ctx)}`, ctx.session );
 
 }
 
