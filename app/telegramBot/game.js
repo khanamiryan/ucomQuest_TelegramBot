@@ -119,14 +119,6 @@ const showGame = async ({ ctx, text: gametext }) => {
             if (gameData.playTime && gameData.playTime > 0 && gameData.playTime < 100) {
                 text += `\nՏևողությունը՝ ${gameData.playTime} րոպե`;
             }
-            await ctx
-                .reply(text, { reply_markup: JSON.stringify({ inline_keyboard: gameButtons }) })
-                .then(async (e) => {
-                    await newMessage({
-                        messageId: e.message_id,
-                        userId: ctx.state.userId,
-                    });
-                });
         }
     } catch (e) {
         console.log("showGame", "ERROR: " + e);
@@ -261,6 +253,8 @@ async function startPlayingClueUpdateSchema(userTelegramId, clueData) {
  * @returns {Promise<unknown>}
  */
 const playClueCallbackTelegramHandle = async ({ ctx, text }) => {
+    //Todo
+    await showGame({ ctx, text });
     //todo refactor
     try {
         const gameStatus = await checkUserGameStatus(ctx.state.userId);
@@ -1031,7 +1025,7 @@ const gameTo = async (ctx) => {
         const [command] = text.split("/");
         switch (command) {
             case "gId":
-                await showGame({ ctx, text });
+                await playClueCallbackTelegramHandle({ ctx, text });
                 break;
             case "gM":
                 await showGameMenu(ctx.state.userId);
