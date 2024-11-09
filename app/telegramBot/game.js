@@ -253,7 +253,7 @@ async function startPlayingClueUpdateSchema(userTelegramId, clueData) {
  * @returns {Promise<unknown>}
  */
 const playClueCallbackTelegramHandle = async ({ ctx, text }) => {
-    //Todo
+    //Todo new
     await showGame({ ctx, text });
     //todo refactor
     try {
